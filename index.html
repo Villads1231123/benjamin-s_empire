@@ -1,513 +1,332 @@
 
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RANKED — Member Network</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RANKED — Premium Network</title>
 <style>
-:root {
-  --bg:#080b13;--panel:#111827;--panel2:#172033;--line:#26334a;
-  --text:#f4f7ff;--muted:#8c9ab3;--accent:#8b5cf6;--accent2:#22d3ee;
-  --good:#34d399;--danger:#fb7185;
-}
+:root{--bg:#080b14;--panel:#111827;--panel2:#172137;--line:#26334c;--purple:#9165ff;--text:#f5f6ff;--muted:#8996ad}
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(ellipse at top,#18213b 0,#080b13 55%);color:var(--text);font-family:Inter,Arial,sans-serif;min-height:100vh}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
 button,input,select{font:inherit}
-button{cursor:pointer;border:0}
+button{cursor:pointer}
 .hidden{display:none!important}
-#auth{min-height:100vh;display:grid;place-items:center;padding:20px}
-.auth-card{width:min(440px,100%);background:#101727;border:1px solid var(--line);border-radius:24px;padding:32px;box-shadow:0 25px 100px #0008}
-.logo{font-size:27px;font-weight:1000;letter-spacing:3px}
-.logo span{color:var(--accent2)}
-.sub{color:var(--muted);font-size:13px;margin:8px 0 25px}
-.field{width:100%;padding:14px 15px;background:#080e1b;color:white;border:1px solid var(--line);border-radius:11px;margin:7px 0 13px;outline:none}
-.field:focus{border-color:var(--accent)}
-.primary{background:linear-gradient(100deg,#7c3aed,#4f46e5);color:white;padding:13px 18px;border-radius:11px;font-weight:800}
-.secondary{background:#202c42;color:#e5edff;padding:11px 15px;border-radius:10px}
-.danger{background:#51202d;color:#fecdd3;padding:10px 13px;border-radius:9px}
-.full{width:100%}
-.switch{color:var(--accent2);cursor:pointer;font-weight:700}
-#app{display:flex;min-height:100vh}
-.sidebar{width:245px;background:#0c1220;border-right:1px solid var(--line);padding:25px 16px;display:flex;flex-direction:column;gap:9px;flex-shrink:0}
-.brand{padding:0 12px 25px}
-.nav-label{font-size:10px;color:#64748b;letter-spacing:2px;font-weight:900;padding:15px 12px 5px}
-.nav{padding:13px 14px;border-radius:11px;background:transparent;color:#9eabc1;text-align:left;font-weight:700}
-.nav:hover,.nav.active{background:#202a43;color:white}
+.app{display:flex;min-height:100vh}
+.sidebar{width:225px;flex-shrink:0;background:#0c1220;border-right:1px solid var(--line);padding:25px 15px;display:flex;flex-direction:column}
+.logo{font-size:26px;font-weight:1000;letter-spacing:2px;padding:5px 10px}
+.logo span{color:#a88aff}
+.side-label{font-size:10px;color:#64748b;letter-spacing:2px;margin:30px 10px 10px}
+.nav{display:flex;align-items:center;gap:12px;padding:13px;border-radius:10px;color:#a7b3c9;border:0;background:none;text-align:left;width:100%;margin:3px 0}
+.nav:hover,.nav.active{background:#251d42;color:white}
+.nav.active{box-shadow:inset 3px 0 var(--purple)}
 .sidebar-bottom{margin-top:auto}
-.main{flex:1;min-width:0;padding:30px;max-width:1500px;margin:0 auto;width:100%}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:30px}
-.page-title{font-size:27px;font-weight:900;margin:0}
+.profile-mini{background:#151f32;padding:13px;border-radius:12px;display:flex;gap:10px;align-items:center}
+.avatar{width:37px;height:37px;border-radius:11px;background:linear-gradient(135deg,#9165ff,#26b9d9);display:grid;place-items:center;font-weight:bold}
+main{flex:1;min-width:0;padding:28px 34px;max-width:1500px;margin:auto;width:100%}
+.topbar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:20px;gap:15px}
+.topbar h2{margin:0;font-size:20px}
 .muted{color:var(--muted)}
 .small{font-size:12px}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
-.card{background:linear-gradient(145deg,#141e31,#101727);border:1px solid var(--line);border-radius:17px;padding:20px}
-.stat-label{font-size:12px;color:var(--muted);font-weight:700}
-.stat-value{font-size:29px;font-weight:950;margin-top:10px}
-.stat-icon{font-size:22px;margin-bottom:12px}
-.hero{background:linear-gradient(110deg,#312064,#172c51 65%,#12384a);border:1px solid #51418b;border-radius:20px;padding:28px;margin-bottom:18px;position:relative;overflow:hidden}
-.hero h2{font-size:27px;margin:0 0 8px}
-.hero p{color:#d1d5f0;max-width:600px}
-.section-title{font-size:18px;font-weight:900;margin:25px 0 14px}
-.rank-pill{display:inline-block;padding:6px 11px;border-radius:30px;background:#26334a;color:#dbeafe;font-size:11px;font-weight:900}
-.rank-Slave{color:#cbd5e1}.rank-Bron{color:#b8a08b}.rank-Silver{color:#d1d5db}
-.rank-Guld{color:#facc15}.rank-Diamant{color:#67e8f9}.rank-Elite{color:#c4b5fd}
-.rank-Champ{color:#fb923c}.rank-Unreal{color:#f0abfc}
-.progress{height:9px;background:#26334a;border-radius:20px;overflow:hidden;margin-top:12px}
-.progress div{height:100%;background:linear-gradient(90deg,#8b5cf6,#22d3ee);width:0}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.member{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #26334a}
-.avatar{width:39px;height:39px;border-radius:12px;background:linear-gradient(140deg,#7c3aed,#0891b2);display:grid;place-items:center;font-weight:900}
-.member-info{flex:1;min-width:0}
-.member-info strong{display:block}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:550px}
-th,td{text-align:left;padding:13px 10px;border-bottom:1px solid var(--line);font-size:13px}
-th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
-select{background:#0b1322;color:white;border:1px solid var(--line);border-radius:8px;padding:9px}
-.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.game-card{min-height:220px}
-.game-card h3{margin:5px 0 8px}
-.game-area{margin-top:18px;padding:15px;background:#0a1120;border:1px solid var(--line);border-radius:13px}
-.game-result{font-weight:800;color:var(--accent2);min-height:24px;margin-top:10px}
-.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
-.memory-tile{height:55px;border-radius:9px;background:#26334a;color:white;font-size:22px}
-.memory-tile.open{background:#4c367e}
-#toast{position:fixed;bottom:20px;right:20px;background:#18243a;border:1px solid #40516f;padding:14px 18px;border-radius:12px;display:none;z-index:20;box-shadow:0 10px 40px #0008}
-.profile-big{font-size:50px}
-.rank-list{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.rank-item{padding:16px;background:#0d1525;border:1px solid var(--line);border-radius:12px}
-@media(max-width:950px){.grid{grid-template-columns:repeat(2,1fr)}.sidebar{width:190px}.main{padding:20px}}
-@media(max-width:650px){#app{display:block}.sidebar{width:100%;height:auto;display:grid;grid-template-columns:repeat(3,1fr);padding:12px}.brand{grid-column:1/-1;padding:8px}.nav-label,.sidebar-bottom{display:none}.nav{font-size:12px;padding:11px 7px;text-align:center}.main{padding:17px}.game-grid{grid-template-columns:1fr}.rank-list{grid-template-columns:repeat(2,1fr)}.topbar{align-items:flex-start}}
+.panel{background:linear-gradient(145deg,#131d30,#101827);border:1px solid var(--line);border-radius:15px;padding:20px}
+.hero{background:linear-gradient(110deg,#30215b,#152d49);border:1px solid #514080;border-radius:18px;padding:28px;margin:24px 0}
+.hero h1{font-size:32px;margin:8px 0}
+.eyebrow{font-size:11px;letter-spacing:2px;color:#c4afff;font-weight:bold}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+.stat{background:#131d30;border:1px solid var(--line);padding:18px;border-radius:14px}
+.stat strong{font-size:23px;display:block;margin-top:10px}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,.8fr);gap:17px;margin-top:18px}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:25px 0 13px}
+.section-title h2{font-size:18px;margin:0}
+.ranks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rank{background:#141e31;border:1px solid var(--line);border-radius:12px;padding:14px}
+.rank h3{font-size:13px;margin:9px 0}
+.rank small{color:var(--muted)}
+.rank-num{font-size:10px;color:#8794aa;letter-spacing:1px}
+.members-box{max-height:320px;overflow-y:auto}
+.member{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid #27344a;gap:10px}
+.member:last-child{border:0}
+.member-name{font-weight:bold;font-size:13px}
+.badge{background:#252044;color:#c6b6ff;border:1px solid #493a78;padding:6px 9px;border-radius:20px;font-size:10px;white-space:nowrap}
+.btn{background:linear-gradient(110deg,#8658ee,#6b68f5);border:0;color:white;border-radius:9px;padding:11px 16px;font-weight:bold}
+.btn:hover{filter:brightness(1.15)}
+.btn.secondary{background:#26344d}
+.btn.danger{background:#8b3347}
+input,select{width:100%;background:#0a1220;border:1px solid #33415b;border-radius:9px;padding:12px;color:white;margin:7px 0 14px}
+label{font-size:11px;color:#9ba9bf;letter-spacing:1px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+td,th{padding:12px;text-align:left;border-bottom:1px solid var(--line);font-size:12px}
+th{color:var(--muted);font-size:10px;letter-spacing:1px}
+.progress{height:8px;border-radius:20px;background:#26344c;overflow:hidden;margin-top:13px}
+.progress div{height:100%;background:linear-gradient(90deg,#9165ff,#35c9dd)}
+.game{background:linear-gradient(145deg,#1b1740,#101d35);border:1px solid #54418a;border-radius:16px;padding:20px}
+.game-area{height:190px;background:#090f20;border:1px solid #34415c;border-radius:12px;position:relative;overflow:hidden;margin-top:15px}
+.target{position:absolute;width:48px;height:48px;border:0;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#43d9ef);box-shadow:0 0 25px #9060ff;display:none}
+.game-score{display:flex;justify-content:space-between;gap:10px}
+.notice{font-size:11px;color:#f5c66c;line-height:1.6}
+.auth{max-width:410px;margin:10vh auto;background:#121b2c;border:1px solid var(--line);border-radius:18px;padding:28px}
+.auth input{margin-bottom:17px}
+a{color:#b9a3ff}
+@media(max-width:950px){.sidebar{width:185px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.ranks{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.app{display:block}.sidebar{width:100%;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.side-label,.sidebar-bottom{display:none}.sidebar nav{display:flex;overflow-x:auto}.nav{width:auto;white-space:nowrap;font-size:12px;padding:10px}.logo{font-size:21px}main{padding:17px}.stats{grid-template-columns:repeat(2,1fr)}.ranks{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:25px}}
 </style>
 </head>
 <body>
 
-<div id="auth">
-  <div class="auth-card">
-    <div class="logo">RANK<span>ED</span></div>
-    <div class="sub">MEMBER NETWORK · COMPETE · PROGRESS · LEVEL UP</div>
-    <div id="loginBox">
-      <h2>Welcome back</h2>
-      <p class="muted small">Log ind på din konto.</p>
-      <label class="small muted">Brugernavn</label>
-      <input id="loginUser" class="field" placeholder="Dit brugernavn" autocomplete="username">
-      <label class="small muted">Adgangskode</label>
-      <input id="loginPass" class="field" type="password" placeholder="Din adgangskode" autocomplete="current-password">
-      <button class="primary full" onclick="login()">LOG IN</button>
-      <p class="muted small">Har du ikke en konto? <span class="switch" onclick="showRegister()">Opret konto</span></p>
-    </div>
-    <div id="registerBox" class="hidden">
-      <h2>Create account</h2>
-      <p class="muted small">Opret din egen medlemskonto.</p>
-      <input id="regUser" class="field" placeholder="Vælg brugernavn">
-      <input id="regPass" class="field" type="password" placeholder="Vælg adgangskode">
-      <input id="regPass2" class="field" type="password" placeholder="Gentag adgangskode">
-      <button class="primary full" onclick="register()">CREATE ACCOUNT</button>
-      <p class="muted small">Har du allerede en konto? <span class="switch" onclick="showLogin()">Log ind</span></p>
-    </div>
-    <p class="muted small">Demo-version · Konti gemmes i denne browser.</p>
-  </div>
+<section id="loginScreen">
+<div class="auth">
+<div class="logo">RANK<span>ED.</span></div>
+<p class="muted">PREMIUM MEMBER NETWORK</p>
+<div id="loginForm">
+<h2>Welcome back.</h2>
+<label>USERNAME</label>
+<input id="loginName" placeholder="Username">
+<label>PASSWORD</label>
+<input id="loginPassword" type="password" placeholder="Password">
+<button class="btn" style="width:100%" onclick="login()">Sign in →</button>
+<p class="muted small">New here? <a href="#" onclick="registerView();return false">Create an account</a></p>
+</div>
+<div id="registerForm" class="hidden">
+<h2>Create account.</h2>
+<label>USERNAME</label><input id="newName" maxlength="20" placeholder="Username">
+<label>PASSWORD</label><input id="newPassword" type="password">
+<label>CONFIRM PASSWORD</label><input id="confirmPassword" type="password">
+<button class="btn" style="width:100%" onclick="register()">Create account →</button>
+<p><a href="#" onclick="loginView();return false">Back to login</a></p>
+</div>
+<p id="error" style="color:#fb7185"></p>
+</div>
+</section>
+
+<div class="app hidden" id="website">
+<aside class="sidebar">
+<div class="logo">RANK<span>ED.</span></div>
+<div class="side-label">WORKSPACE</div>
+<nav>
+<button class="nav active" onclick="page('dashboard',this)">◈ Dashboard</button>
+<button class="nav" onclick="page('rankpage',this)">✦ Rank System</button>
+<button class="nav" onclick="page('members',this)">♙ Members</button>
+<button class="nav" onclick="page('minigame',this)">🎮 Mini Games</button>
+<button class="nav hidden" id="adminNav" onclick="page('admin',this)">⚙ Admin Panel</button>
+</nav>
+<div class="sidebar-bottom">
+<div class="profile-mini">
+<div class="avatar" id="avatar">?</div>
+<div><strong id="sideName">User</strong><div class="muted small" id="sideRole">Member</div></div>
+</div>
+<button class="nav" style="margin-top:10px" onclick="logout()">↪ Log out</button>
+</div>
+</aside>
+
+<main>
+<div class="topbar">
+<div><h2 id="pageTitle">Dashboard</h2><span class="muted small">MEMBER NETWORK / 2026</span></div>
+<span class="badge" id="topRole">MEMBER</span>
 </div>
 
-<div id="app" class="hidden">
-  <aside class="sidebar">
-    <div class="brand"><div class="logo">RANK<span>ED</span></div><div class="muted small">MEMBER NETWORK</div></div>
-    <div class="nav-label">MAIN MENU</div>
-    <button class="nav active" onclick="showPage('home',this)">◈ Dashboard</button>
-    <button class="nav" onclick="showPage('profile',this)">◉ My Profile</button>
-    <button class="nav" onclick="showPage('members',this)">♙ Members</button>
-    <button class="nav" onclick="showPage('ranks',this)">◆ Rank System</button>
-    <div class="nav-label">ENTERTAINMENT</div>
-    <button class="nav" onclick="showPage('games',this)">🎮 Mini Games</button>
-    <div class="nav-label">MANAGEMENT</div>
-    <button class="nav hidden" id="adminNav" onclick="showPage('admin',this)">⚙ Admin Panel</button>
-    <div class="sidebar-bottom">
-      <button class="nav" onclick="logout()">↪ Log out</button>
-    </div>
-  </aside>
-  <main class="main">
-    <div class="topbar">
-      <div><div class="muted small">MEMBER AREA</div><h1 class="page-title" id="pageTitle">Dashboard</h1></div>
-      <div class="row"><span class="rank-pill" id="topRank">SLAVE</span><div class="avatar" id="topAvatar">V</div></div>
-    </div>
-
-    <section id="page-home">
-      <div class="hero">
-        <div class="muted small">RANKED MEMBER NETWORK</div>
-        <h2 id="welcome">Welcome!</h2>
-        <p>Welcome to your member dashboard. Track your rank, explore the community and challenge yourself in the mini games.</p>
-        <button class="primary" onclick="showPage('games')">PLAY MINI GAMES →</button>
-      </div>
-      <div class="grid">
-        <div class="card"><div class="stat-icon">♙</div><div class="stat-label">YOUR RANK</div><div class="stat-value" id="statRank">Slave</div></div>
-        <div class="card"><div class="stat-icon">👥</div><div class="stat-label">TOTAL MEMBERS</div><div class="stat-value" id="statMembers">0</div></div>
-        <div class="card"><div class="stat-icon">🎮</div><div class="stat-label">GAMES PLAYED</div><div class="stat-value" id="statGames">0</div></div>
-        <div class="card"><div class="stat-icon">⭐</div><div class="stat-label">YOUR POINTS</div><div class="stat-value" id="statPoints">0</div></div>
-      </div>
-      <div class="section-title">Your progression</div>
-      <div class="card">
-        <div class="row"><strong id="progressRank">Slave</strong><span class="muted small" id="progressText">Rank 1 of 8</span></div>
-        <div class="progress"><div id="progressBar"></div></div>
-        <p class="muted small">Your rank is managed by the Owner and Admin.</p>
-      </div>
-      <div class="section-title">Community preview</div>
-      <div class="card" id="homeMembers"></div>
-    </section>
-
-    <section id="page-profile" class="hidden">
-      <div class="card">
-        <div class="profile-big">👤</div>
-        <h2 id="profileName">Member</h2>
-        <span class="rank-pill" id="profileRank">SLAVE</span>
-        <p class="muted">Your personal member profile.</p>
-        <div class="grid">
-          <div><div class="stat-label">ROLE</div><strong id="profileRole">Member</strong></div>
-          <div><div class="stat-label">POINTS</div><strong id="profilePoints">0</strong></div>
-          <div><div class="stat-label">GAMES PLAYED</div><strong id="profileGames">0</strong></div>
-          <div><div class="stat-label">MEMBER SINCE</div><strong id="profileDate">Today</strong></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-members" class="hidden">
-      <div class="card">
-        <div class="row"><h2>Members</h2><span class="muted small" id="memberCount"></span></div>
-        <input id="memberSearch" class="field" placeholder="Search members..." oninput="renderMembers()">
-        <div id="memberList"></div>
-      </div>
-    </section>
-
-    <section id="page-ranks" class="hidden">
-      <div class="card">
-        <h2>Rank System</h2>
-        <p class="muted">The official rank order used by the community.</p>
-        <div class="rank-list" id="rankList"></div>
-      </div>
-    </section>
-
-    <section id="page-games" class="hidden">
-      <div class="hero"><h2>🎮 Mini Game Arcade</h2><p>Play small games, beat your own records and collect points. Your points are separate from your official rank.</p></div>
-      <div class="game-grid">
-        <div class="card game-card">
-          <div class="stat-icon">⚡</div><h3>Reaction Test</h3>
-          <p class="muted small">Wait for green, then click as quickly as possible.</p>
-          <div class="game-area">
-            <button class="primary full" id="reactionBtn" onclick="reactionStart()">START TEST</button>
-            <div class="game-result" id="reactionResult">Ready?</div>
-          </div>
-        </div>
-        <div class="card game-card">
-          <div class="stat-icon">🔢</div><h3>Number Guess</h3>
-          <p class="muted small">Guess the secret number between 1 and 100.</p>
-          <div class="game-area">
-            <input class="field" id="guessInput" type="number" min="1" max="100" placeholder="Your guess">
-            <button class="primary full" onclick="guessNumber()">GUESS</button>
-            <div class="game-result" id="guessResult">You have 7 attempts.</div>
-            <button class="secondary" onclick="newGuess()">New round</button>
-          </div>
-        </div>
-        <div class="card game-card">
-          <div class="stat-icon">🧠</div><h3>Memory Match</h3>
-          <p class="muted small">Find all matching pairs.</p>
-          <div class="game-area">
-            <div class="row"><span class="muted small" id="memoryScore">Pairs: 0/8</span><button class="secondary" onclick="newMemory()">Restart</button></div>
-            <div class="memory-grid" id="memoryGrid"></div>
-            <div class="game-result" id="memoryResult"></div>
-          </div>
-        </div>
-        <div class="card game-card">
-          <div class="stat-icon">👆</div><h3>Clicker Challenge</h3>
-          <p class="muted small">Click as many times as possible in 10 seconds.</p>
-          <div class="game-area">
-            <div class="stat-value" id="clickCount">0</div>
-            <button class="primary full" id="clickBtn" onclick="clickGame()">START / CLICK</button>
-            <div class="game-result" id="clickResult">10 seconds. Go!</div>
-          </div>
-        </div>
-        <div class="card game-card">
-          <div class="stat-icon">⭕</div><h3>Tic Tac Toe</h3>
-          <p class="muted small">Play against a friend locally on the same screen.</p>
-          <div class="game-area">
-            <div class="memory-grid" id="ticGrid" style="grid-template-columns:repeat(3,1fr)"></div>
-            <div class="game-result" id="ticResult">X's turn</div>
-            <button class="secondary" onclick="newTic()">Restart match</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="page-admin" class="hidden">
-      <div class="hero"><h2>⚙ Administration Center</h2><p>Manage community members and assign their official ranks.</p></div>
-      <div class="grid">
-        <div class="card"><div class="stat-label">TOTAL MEMBERS</div><div class="stat-value" id="adminMembers">0</div></div>
-        <div class="card"><div class="stat-label">ADMINS / OWNER</div><div class="stat-value" id="adminStaff">0</div></div>
-        <div class="card"><div class="stat-label">YOUR ROLE</div><div class="stat-value" id="adminRole">Admin</div></div>
-        <div class="card"><div class="stat-label">RANKS</div><div class="stat-value">8</div></div>
-      </div>
-      <div class="section-title">Manage members</div>
-      <div class="card">
-        <p class="muted small">Only Owner and Admin can assign ranks. Special staff accounts cannot be edited here.</p>
-        <div class="table-wrap">
-          <table><thead><tr><th>Member</th><th>Role</th><th>Current rank</th><th>Change rank</th></tr></thead>
-          <tbody id="adminTable"></tbody></table>
-        </div>
-      </div>
-    </section>
-  </main>
+<section id="dashboard">
+<div class="hero">
+<div class="eyebrow">PERSONAL OVERVIEW</div>
+<h1 id="welcome">Welcome back!</h1>
+<p class="muted">Your account, your progress, your rank.</p>
 </div>
-<div id="toast"></div>
+<div class="stats">
+<div class="stat"><span class="muted small">YOUR RANK</span><strong id="myRank">—</strong></div>
+<div class="stat"><span class="muted small">ACCOUNT ROLE</span><strong id="myRole">—</strong></div>
+<div class="stat"><span class="muted small">TOTAL MEMBERS</span><strong id="memberCount">0</strong></div>
+<div class="stat"><span class="muted small">RANK LEVEL</span><strong id="rankLevel">1/39</strong></div>
+</div>
+<div class="layout">
+<div class="panel">
+<div class="section-title"><h2>Your progression</h2><span class="badge">PROFILE</span></div>
+<strong id="rankName">SLAVE: BRONZE</strong>
+<div class="progress"><div id="progressBar"></div></div>
+<p class="muted small" id="progressText"></p>
+</div>
+<div class="panel">
+<div class="section-title"><h2>Quick access</h2></div>
+<button class="btn" style="width:100%;margin-bottom:9px" onclick="page('rankpage')">Explore ranks →</button>
+<button class="btn secondary" style="width:100%" onclick="page('minigame')">Play mini-game →</button>
+</div>
+</div>
+<div class="section-title"><h2>Rank overview</h2><span class="muted small">TOP RANKS</span></div>
+<div class="ranks" id="topRanks"></div>
+</section>
+
+<section id="rankpage" class="hidden">
+<div class="hero"><div class="eyebrow">OFFICIAL PROGRESSION</div><h1>Rank System</h1><p class="muted">39 ranks. One progression ladder.</p></div>
+<div class="ranks" id="allRanks"></div>
+</section>
+
+<section id="members" class="hidden">
+<div class="hero"><div class="eyebrow">COMMUNITY</div><h1>Members</h1><p class="muted">Browse the community.</p></div>
+<div class="panel">
+<div class="section-title"><h2>Member directory</h2><span class="badge" id="memberTotal">0 MEMBERS</span></div>
+<input id="search" placeholder="Search by username..." oninput="renderMembers()">
+<div class="members-box" id="memberList"></div>
+</div>
+</section>
+
+<section id="minigame" class="hidden">
+<div class="hero"><div class="eyebrow">ARCADE</div><h1>Mini Games</h1><p class="muted">Play, improve your score and beat your record.</p></div>
+<div class="game">
+<div class="eyebrow">GAME 01 / REFLEX</div>
+<h2>⚡ TAP RUSH</h2>
+<p class="muted">Click the glowing target as many times as possible in 15 seconds.</p>
+<div class="game-score">
+<div>SCORE <strong id="score">0</strong></div>
+<div>TIME <strong id="timer">15</strong>s</div>
+<div>BEST <strong id="best">0</strong></div>
+</div>
+<div class="game-area" id="gameArea">
+<button class="target" id="target" onclick="hitTarget()"></button>
+<div id="gameMessage" class="muted" style="position:absolute;inset:0;display:grid;place-items:center;text-align:center">Press START to play</div>
+</div>
+<button class="btn" style="margin-top:15px" id="startGame" onclick="startGame()">START GAME</button>
+</div>
+</section>
+
+<section id="admin" class="hidden">
+<div class="hero"><div class="eyebrow">CONTROL CENTER</div><h1>Administration</h1><p class="muted">Manage community member ranks.</p></div>
+<div class="panel">
+<div class="section-title"><h2>Member management</h2></div>
+<div class="table-wrap">
+<table><thead><tr><th>USERNAME</th><th>ROLE</th><th>CURRENT RANK</th><th>CHANGE RANK</th></tr></thead><tbody id="adminRows"></tbody></table>
+</div>
+</div>
+<p class="notice">This is a local browser demo. It is not secure for confidential information.</p>
+</section>
+</main>
+</div>
 
 <script>
-const RANKS=["Slave","Bron","Silver","Guld","Diamant","Elite","Champ","Unreal"];
-const SPECIAL={
-  villads:{password:"2305Villy",role:"Owner",rank:"Unreal",points:0,games:0,joined:"Owner"},
-  benjamin:{password:"Benny1212",role:"Admin",rank:"Unreal",points:0,games:0,joined:"Admin"}
+"use strict";
+const TIERS=["Bronze","Silver","Gold","Diamond","Elite","Champ","Unreal"];
+const RANKS=[
+...["Slave","Bodyguard","Personlig Slave","Pølse","Medisterpølse"]
+.flatMap(f=>TIERS.map(t=>f+": "+t)),
+"Avocado","Kage","Special","Ejer"
+];
+const STAFF={
+villads:{password:"2305Villy",role:"Owner",rank:"Ejer"},
+benjamin:{password:"benny12345",role:"Admin",rank:"Special"}
 };
-const STORE="ranked_accounts_v2";
-const SESSION="ranked_session_v2";
-let accounts=loadAccounts();
-let current=null;
-let reactionTimer=null, reactionReady=false, reactionStartTime=0;
-let secret=0,guessAttempts=7;
-let memoryCards=[],memoryOpen=[],memoryFound=0,memoryLock=false;
-let clickActive=false,clickTotal=0,clickInterval=null;
-let ticBoard=Array(9).fill(""),ticTurn="X",ticOver=false;
-
-function loadAccounts(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(STORE));
-    if(saved && typeof saved==="object") return {...SPECIAL,...saved};
-  }catch(e){}
-  return {...SPECIAL};
-}
-function save(){localStorage.setItem(STORE,JSON.stringify(accounts))}
-function showToast(message){
-  const t=document.getElementById("toast");t.textContent=message;t.style.display="block";
-  clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.style.display="none",2600);
-}
-function showRegister(){
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("registerBox").classList.remove("hidden");
-}
-function showLogin(){
-  document.getElementById("registerBox").classList.add("hidden");
-  document.getElementById("loginBox").classList.remove("hidden");
-}
+const KEY="ranked_premium_v6";
+let accounts={},currentUser=null,score=0,timeLeft=15,gameTimer=null,playing=false;
+const $=id=>document.getElementById(id);
+function load(){try{accounts=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){accounts={}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(accounts))}
+function showError(t){$("error").textContent=t}
+function registerView(){$("loginForm").classList.add("hidden");$("registerForm").classList.remove("hidden");showError("")}
+function loginView(){$("registerForm").classList.add("hidden");$("loginForm").classList.remove("hidden")}
 function login(){
-  const u=document.getElementById("loginUser").value.trim().toLowerCase();
-  const p=document.getElementById("loginPass").value;
-  if(!accounts[u]||accounts[u].password!==p){showToast("Forkert brugernavn eller adgangskode.");return}
-  current=u;localStorage.setItem(SESSION,u);enterApp();
+let n=$("loginName").value.trim().toLowerCase(),p=$("loginPassword").value;
+if(!n||!p)return showError("Fill in both fields.");
+if(STAFF[n]&&STAFF[n].password===p){
+if(!accounts[n])accounts[n]={username:n,role:STAFF[n].role,rank:STAFF[n].rank};
+accounts[n].role=STAFF[n].role;accounts[n].rank=STAFF[n].rank;
+}else if(!accounts[n]||accounts[n].password!==p)return showError("Incorrect username or password.");
+currentUser=n;save();openSite();
 }
 function register(){
-  const u=document.getElementById("regUser").value.trim().toLowerCase();
-  const p=document.getElementById("regPass").value;
-  const p2=document.getElementById("regPass2").value;
-  if(!/^[a-z0-9_]{3,16}$/.test(u)){showToast("Brugernavn skal være 3-16 tegn og kun bruge bogstaver, tal eller _.");return}
-  if(accounts[u]){showToast("Brugernavnet er allerede taget.");return}
-  if(p.length<4){showToast("Adgangskoden skal være mindst 4 tegn.");return}
-  if(p!==p2){showToast("Adgangskoderne matcher ikke.");return}
-  accounts[u]={password:p,role:"Member",rank:"Slave",points:0,games:0,joined:new Date().toLocaleDateString("da-DK")};
-  save();current=u;localStorage.setItem(SESSION,u);enterApp();showToast("Din konto er oprettet!");
+let n=$("newName").value.trim().toLowerCase(),p=$("newPassword").value,p2=$("confirmPassword").value;
+if(!/^[a-z0-9_]{3,20}$/.test(n))return showError("Username: 3-20 letters, numbers or underscore.");
+if(STAFF[n]||accounts[n])return showError("Username is unavailable.");
+if(p.length<6)return showError("Password must be at least 6 characters.");
+if(p!==p2)return showError("Passwords do not match.");
+accounts[n]={username:n,password:p,role:"Member",rank:"Slave: Bronze"};
+currentUser=n;save();openSite();
 }
-function enterApp(){
-  document.getElementById("auth").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  document.getElementById("adminNav").classList.toggle("hidden",!isStaff());
-  updateUI();showPage("home");
-  newGuess();newMemory();newTic();
+function isAdmin(){return currentUser&&["Owner","Admin"].includes(accounts[currentUser]?.role)}
+function openSite(){
+$("loginScreen").classList.add("hidden");$("website").classList.remove("hidden");
+$("adminNav").classList.toggle("hidden",!isAdmin());update();page("dashboard");
 }
-function logout(){
-  localStorage.removeItem(SESSION);current=null;
-  document.getElementById("app").classList.add("hidden");
-  document.getElementById("auth").classList.remove("hidden");
-  showLogin();
+function logout(){stopGame();save();currentUser=null;$("website").classList.add("hidden");$("loginScreen").classList.remove("hidden");$("loginPassword").value="";$("loginName").value="";loginView()}
+function page(id,button){
+if(id==="admin"&&!isAdmin())return;
+["dashboard","rankpage","members","minigame","admin"].forEach(x=>$(x).classList.add("hidden"));
+$(id).classList.remove("hidden");
+document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));
+if(button)button.classList.add("active");
+else document.querySelectorAll(".nav").forEach(x=>{if(x.getAttribute("onclick")?.includes("'"+id+"'"))x.classList.add("active")});
+$("pageTitle").textContent={dashboard:"Dashboard",rankpage:"Rank System",members:"Members",minigame:"Mini Games",admin:"Admin Panel"}[id];
+if(id!=="minigame")stopGame();
 }
-function isStaff(){return current && ["Owner","Admin"].includes(accounts[current]?.role)}
-function updateUI(){
-  const a=accounts[current];if(!a)return;
-  document.getElementById("welcome").textContent="Welcome, "+current+"!";
-  document.getElementById("topRank").textContent=a.rank.toUpperCase();
-  document.getElementById("topAvatar").textContent=current[0].toUpperCase();
-  document.getElementById("statRank").textContent=a.rank;
-  document.getElementById("statMembers").textContent=Object.keys(accounts).length;
-  document.getElementById("statGames").textContent=a.games||0;
-  document.getElementById("statPoints").textContent=a.points||0;
-  document.getElementById("progressRank").textContent=a.rank;
-  document.getElementById("progressText").textContent="Rank "+(RANKS.indexOf(a.rank)+1)+" of 8";
-  document.getElementById("progressBar").style.width=((RANKS.indexOf(a.rank)+1)/8*100)+"%";
-  document.getElementById("profileName").textContent=current;
-  document.getElementById("profileRank").textContent=a.rank.toUpperCase();
-  document.getElementById("profileRole").textContent=a.role;
-  document.getElementById("profilePoints").textContent=a.points||0;
-  document.getElementById("profileGames").textContent=a.games||0;
-  document.getElementById("profileDate").textContent=a.joined||"Unknown";
-  document.getElementById("adminNav").classList.toggle("hidden",!isStaff());
-  renderMembers();renderAdmin();renderRanks();renderHomeMembers();
-}
-function showPage(page,button){
-  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
-  document.getElementById("page-"+page).classList.remove("hidden");
-  document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));
-  if(button)button.classList.add("active");
-  else document.querySelectorAll(".nav").forEach(n=>{if(n.textContent.includes(page==="home"?"Dashboard":page==="games"?"Mini Games":page==="profile"?"My Profile":page==="members"?"Members":page==="ranks"?"Rank System":"Admin Panel"))n.classList.add("active")});
-  const titles={home:"Dashboard",profile:"My Profile",members:"Members",ranks:"Rank System",games:"Mini Games",admin:"Admin Panel"};
-  document.getElementById("pageTitle").textContent=titles[page]||"Dashboard";
-  if(page==="admin"&&!isStaff()){showPage("home");showToast("Ingen adgang.");return}
-  if(page==="admin")renderAdmin();
+function safe(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderRanks(){
+let make=(r,i)=>`<div class="rank"><div class="rank-num">RANK ${String(i+1).padStart(2,"0")}</div><h3>${safe(r.toUpperCase())}</h3><small>${i===0?"STARTING RANK":i===RANKS.length-1?"HIGHEST RANK":"LEVEL "+(i+1)}</small></div>`;
+$("topRanks").innerHTML=RANKS.slice(0,6).map(make).join("");
+$("allRanks").innerHTML=RANKS.map(make).join("");
 }
 function renderMembers(){
-  const search=(document.getElementById("memberSearch")?.value||"").toLowerCase();
-  const names=Object.keys(accounts).filter(n=>n.includes(search));
-  document.getElementById("memberCount").textContent=names.length+" members";
-  document.getElementById("memberList").innerHTML=names.map(n=>{
-    const a=accounts[n];return `<div class="member"><div class="avatar">${n[0].toUpperCase()}</div><div class="member-info"><strong>${escapeHTML(n)}</strong><span class="muted small">${escapeHTML(a.role)}</span></div><span class="rank-pill rank-${a.rank}">${escapeHTML(a.rank)}</span></div>`;
-  }).join("")||"<p class='muted'>No members found.</p>";
-}
-function renderHomeMembers(){
-  const names=Object.keys(accounts).slice(0,5);
-  document.getElementById("homeMembers").innerHTML=names.map(n=>`<div class="member"><div class="avatar">${n[0].toUpperCase()}</div><div class="member-info"><strong>${escapeHTML(n)}</strong><span class="muted small">${escapeHTML(accounts[n].role)}</span></div><span class="rank-pill">${escapeHTML(accounts[n].rank)}</span></div>`).join("");
-}
-function renderRanks(){
-  document.getElementById("rankList").innerHTML=RANKS.map((r,i)=>`<div class="rank-item"><div class="muted small">LEVEL ${i+1}</div><h3 class="rank-${r}">${r}</h3><div class="muted small">${i===0?"Starting rank":i===7?"Highest rank":"Rank "+(i+1)+" of 8"}</div></div>`).join("");
+let q=($("search").value||"").toLowerCase();
+let names=Object.keys(accounts).filter(n=>n.includes(q)).sort();
+$("memberTotal").textContent=names.length+" MEMBERS";
+$("memberList").innerHTML=names.map(n=>`<div class="member"><div><div class="member-name">${safe(n)}</div><div class="muted small">${safe(accounts[n].role)}</div></div><span class="badge">${safe(accounts[n].rank)}</span></div>`).join("")||"<p class='muted'>No members found.</p>";
 }
 function renderAdmin(){
-  if(!isStaff())return;
-  const names=Object.keys(accounts);
-  document.getElementById("adminMembers").textContent=names.length;
-  document.getElementById("adminStaff").textContent=names.filter(n=>["Owner","Admin"].includes(accounts[n].role)).length;
-  document.getElementById("adminRole").textContent=accounts[current].role;
-  document.getElementById("adminTable").innerHTML=names.map(n=>{
-    const a=accounts[n],locked=["villads","benjamin"].includes(n);
-    const options=RANKS.map(r=>`<option value="${r}" ${r===a.rank?"selected":""}>${r}</option>`).join("");
-    return `<tr><td><strong>${escapeHTML(n)}</strong></td><td>${escapeHTML(a.role)}</td><td>${escapeHTML(a.rank)}</td><td>${locked?"<span class='muted'>Protected account</span>":`<select onchange="changeRank('${n}',this.value)">${options}</select>`}</td></tr>`;
-  }).join("");
+if(!isAdmin())return;
+$("adminRows").innerHTML=Object.keys(accounts).sort().map(n=>{
+let u=accounts[n];
+return `<tr><td><b>${safe(n)}</b></td><td>${safe(u.role)}</td><td>${safe(u.rank)}</td><td>${STAFF[n]?"Protected":`<select onchange="changeRank('${safe(n)}',this.value)">${RANKS.map(r=>`<option value="${safe(r)}" ${r===u.rank?"selected":""}>${safe(r)}</option>`).join("")}</select>`}</td></tr>`;
+}).join("");
 }
-function changeRank(user,rank){
-  if(!isStaff()){showToast("Du har ikke adgang.");return}
-  if(!accounts[user]||["villads","benjamin"].includes(user)){showToast("Denne konto kan ikke ændres.");return}
-  if(!RANKS.includes(rank))return;
-  accounts[user].rank=rank;save();updateUI();showToast(user+" er nu "+rank+".");
+function changeRank(n,r){if(!isAdmin()||!accounts[n]||STAFF[n]||!RANKS.includes(r))return;accounts[n].rank=r;save();update()}
+function update(){
+let u=accounts[currentUser],i=RANKS.indexOf(u.rank);
+$("welcome").textContent="Welcome back, "+currentUser+".";
+$("myRank").textContent=u.rank;$("myRole").textContent=u.role;
+$("memberCount").textContent=Object.keys(accounts).length;
+$("rankLevel").textContent=(i+1)+"/"+RANKS.length;
+$("rankName").textContent=u.rank.toUpperCase();
+$("rankNumber")?.textContent;
+$("progressBar").style.width=((i+1)/RANKS.length*100)+"%";
+$("progressText").textContent="Rank "+(i+1)+" of "+RANKS.length;
+$("sideName").textContent=currentUser;$("sideRole").textContent=u.role;
+$("avatar").textContent=currentUser[0].toUpperCase();
+$("topRole").textContent=u.role.toUpperCase();
+$("adminNav").classList.toggle("hidden",!isAdmin());
+renderRanks();renderMembers();if(isAdmin())renderAdmin();
+$("best").textContent=localStorage.getItem("tapbest_"+currentUser)||0;
 }
-function escapeHTML(value){
-  return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function startGame(){
+stopGame();score=0;timeLeft=15;playing=true;
+$("score").textContent=score;$("timer").textContent=timeLeft;
+$("gameMessage").style.display="none";$("target").style.display="block";
+$("startGame").disabled=true;$("startGame").textContent="PLAYING...";
+moveTarget();
+gameTimer=setInterval(()=>{
+timeLeft--;$("timer").textContent=timeLeft;
+if(timeLeft<=0)finishGame();
+},1000);
 }
-function award(points){
-  if(!current)return;
-  accounts[current].points=(accounts[current].points||0)+points;
-  accounts[current].games=(accounts[current].games||0)+1;
-  save();updateUI();showToast("+"+points+" points!");
+function moveTarget(){
+let area=$("gameArea"),target=$("target");
+target.style.left=Math.random()*(area.clientWidth-50)+"px";
+target.style.top=Math.random()*(area.clientHeight-50)+"px";
 }
-
-/* REACTION TEST */
-function reactionStart(){
-  const b=document.getElementById("reactionBtn"),r=document.getElementById("reactionResult");
-  clearTimeout(reactionTimer);reactionReady=false;
-  b.disabled=true;b.textContent="WAIT FOR GREEN";b.style.background="#9f263b";
-  r.textContent="Wait...";
-  reactionTimer=setTimeout(()=>{
-    reactionReady=true;reactionStartTime=performance.now();
-    b.disabled=false;b.textContent="CLICK NOW!";b.style.background="#15803d";
-  },1200+Math.random()*3000);
-  b.onclick=()=>{
-    if(!reactionReady){clearTimeout(reactionTimer);r.textContent="Too early! Try again.";b.disabled=false;b.textContent="TRY AGAIN";b.style.background="";b.onclick=reactionStart;return}
-    const ms=Math.round(performance.now()-reactionStartTime);
-    r.textContent="Your reaction: "+ms+" ms";
-    b.disabled=false;b.textContent="TRY AGAIN";b.style.background="";b.onclick=reactionStart;
-    award(ms<250?30:ms<400?20:10);
-  };
+function hitTarget(){
+if(!playing)return;
+score++;$("score").textContent=score;moveTarget();
 }
-
-/* NUMBER GUESS */
-function newGuess(){secret=Math.floor(Math.random()*100)+1;guessAttempts=7;document.getElementById("guessResult").textContent="You have 7 attempts.";document.getElementById("guessInput").value=""}
-function guessNumber(){
-  const v=Number(document.getElementById("guessInput").value),r=document.getElementById("guessResult");
-  if(!v||v<1||v>100){r.textContent="Enter a number from 1 to 100.";return}
-  guessAttempts--;
-  if(v===secret){r.textContent="Correct! You found it!";award(25);newGuess()}
-  else if(guessAttempts<=0){r.textContent="No attempts left. The number was "+secret+".";newGuess()}
-  else r.textContent=(v<secret?"Too low!":"Too high!")+" "+guessAttempts+" attempts left.";
+function finishGame(){
+if(!playing)return;
+playing=false;clearInterval(gameTimer);gameTimer=null;
+$("target").style.display="none";$("gameMessage").style.display="grid";
+$("gameMessage").textContent="TIME'S UP! Your score: "+score;
+let best=Number(localStorage.getItem("tapbest_"+currentUser)||0);
+if(score>best){localStorage.setItem("tapbest_"+currentUser,score);$("best").textContent=score}
+$("startGame").disabled=false;$("startGame").textContent="PLAY AGAIN";
 }
-
-/* MEMORY MATCH */
-function newMemory(){
-  const icons=["🚀","💎","👑","⚡","🎯","🔥","🌙","⭐"];
-  memoryCards=[...icons,...icons].sort(()=>Math.random()-.5);
-  memoryOpen=[];memoryFound=0;memoryLock=false;
-  document.getElementById("memoryScore").textContent="Pairs: 0/8";
-  document.getElementById("memoryResult").textContent="";
-  renderMemory();
+function stopGame(){
+if(gameTimer){clearInterval(gameTimer);gameTimer=null}
+playing=false;
+if($("target"))$("target").style.display="none";
+if($("startGame")){$("startGame").disabled=false;$("startGame").textContent="START GAME"}
 }
-function renderMemory(){
-  document.getElementById("memoryGrid").innerHTML=memoryCards.map((v,i)=>{
-    const open=memoryOpen.includes(i)||memoryCards[i]===null;
-    return `<button class="memory-tile ${open?"open":""}" onclick="flipMemory(${i})">${open?(v||"✓"):"?"}</button>`;
-  }).join("");
-}
-function flipMemory(i){
-  if(memoryLock||memoryOpen.includes(i)||memoryCards[i]===null)return;
-  memoryOpen.push(i);renderMemory();
-  if(memoryOpen.length===2){
-    const [a,b]=memoryOpen;
-    if(memoryCards[a]===memoryCards[b]){
-      memoryCards[a]=null;memoryCards[b]=null;memoryFound++;
-      memoryOpen=[];document.getElementById("memoryScore").textContent="Pairs: "+memoryFound+"/8";
-      renderMemory();
-      if(memoryFound===8){document.getElementById("memoryResult").textContent="Perfect memory!";award(35)}
-    }else{
-      memoryLock=true;setTimeout(()=>{memoryOpen=[];memoryLock=false;renderMemory()},750);
-    }
-  }
-}
-
-/* CLICKER */
-function clickGame(){
-  if(!clickActive){
-    clickActive=true;clickTotal=0;
-    document.getElementById("clickCount").textContent="0";
-    document.getElementById("clickResult").textContent="Time: 10 seconds";
-    document.getElementById("clickBtn").textContent="CLICK!";
-    const end=Date.now()+10000;
-    clearInterval(clickInterval);
-    clickInterval=setInterval(()=>{
-      const left=Math.max(0,Math.ceil((end-Date.now())/1000));
-      document.getElementById("clickResult").textContent="Time: "+left+" seconds";
-      if(left===0){
-        clearInterval(clickInterval);clickActive=false;
-        document.getElementById("clickBtn").textContent="PLAY AGAIN";
-        document.getElementById("clickResult").textContent="You got "+clickTotal+" clicks!";
-        award(Math.min(50,Math.floor(clickTotal/2)));
-      }
-    },100);
-    return;
-  }
-  clickTotal++;document.getElementById("clickCount").textContent=clickTotal;
-}
-
-/* TIC TAC TOE */
-function newTic(){ticBoard=Array(9).fill("");ticTurn="X";ticOver=false;document.getElementById("ticResult").textContent="X's turn";renderTic()}
-function renderTic(){
-  document.getElementById("ticGrid").innerHTML=ticBoard.map((v,i)=>`<button class="memory-tile" onclick="ticMove(${i})" style="height:65px;font-size:27px">${v}</button>`).join("");
-}
-function ticMove(i){
-  if(ticOver||ticBoard[i])return;
-  ticBoard[i]=ticTurn;
-  const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  renderTic();
-  if(wins.some(line=>line.every(x=>ticBoard[x]===ticTurn))){
-    document.getElementById("ticResult").textContent=ticTurn+" wins!";
-    ticOver=true;if(ticTurn==="X")award(15);return;
-  }
-  if(ticBoard.every(Boolean)){document.getElementById("ticResult").textContent="Draw!";ticOver=true;return}
-  ticTurn=ticTurn==="X"?"O":"X";
-  document.getElementById("ticResult").textContent=ticTurn+"'s turn";
-}
-
-(function boot(){
-  const saved=localStorage.getItem(SESSION);
-  if(saved&&accounts[saved]){current=saved;enterApp()}
-})();
+load();
 </script>
 </body>
 </html>
