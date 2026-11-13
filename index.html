@@ -3,269 +3,304 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RANKED — Premium Network</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RANKED — Elite Network</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#080b14;--panel:#121c2e;--line:#293650;--purple:#9165ff;--text:#f5f6ff;--muted:#8996ad}
+:root{
+ --bg:#080b14;--panel:#111a2b;--panel2:#17243a;
+ --line:#293951;--purple:#9874ff;--cyan:#52d9e9;
+ --text:#f5f6ff;--muted:#94a3b8;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
 button,input,select{font:inherit}
 button{cursor:pointer}
 .hidden{display:none!important}
-.auth{max-width:420px;margin:9vh auto;padding:28px;background:var(--panel);border:1px solid var(--line);border-radius:18px}
-.logo{font-size:27px;font-weight:1000;letter-spacing:2px}.logo span{color:#a78bfa}
-h1,h2,h3,p{margin-top:0}
-input,select{width:100%;padding:12px;margin:8px 0 16px;background:#091220;color:white;border:1px solid #35445f;border-radius:9px}
-label{font-size:11px;color:#9caac0;letter-spacing:1px}
-.btn{background:linear-gradient(110deg,#8658ee,#6968f5);color:white;border:0;padding:11px 16px;border-radius:9px;font-weight:bold}
-.btn.secondary{background:#293750}
-.btn:disabled{opacity:.5}
-a{color:#bba6ff;cursor:pointer}
-.muted{color:var(--muted)}.small{font-size:12px}
-.notice{font-size:12px;color:#f3c875;line-height:1.6}
+button:disabled{opacity:.45;cursor:not-allowed}
+.auth{width:min(430px,92%);margin:9vh auto;padding:30px;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 80px #0008}
+.logo{font-size:27px;font-weight:1000;letter-spacing:3px}
+.logo span{color:var(--purple)}
+input,select{background:#0a1220;color:white;border:1px solid var(--line);padding:12px;border-radius:9px;width:100%;margin:8px 0 16px}
+label{font-size:10px;letter-spacing:2px;color:var(--muted)}
+button.primary{background:linear-gradient(110deg,#8059ed,#536ce9);border:0;color:white;padding:12px 17px;border-radius:10px;font-weight:bold}
+button.secondary{background:#26354d;color:white;border:1px solid var(--line);padding:11px;border-radius:9px}
+a{color:#b9a4ff;cursor:pointer}
+.muted{color:var(--muted)}
+.small{font-size:12px}
 .app{display:flex;min-height:100vh}
-.sidebar{width:220px;flex-shrink:0;padding:23px 14px;background:#0c1220;border-right:1px solid var(--line);display:flex;flex-direction:column}
-.nav{display:block;width:100%;text-align:left;background:none;border:0;color:#aab6ca;padding:13px;border-radius:9px;margin:3px 0}
-.nav.active,.nav:hover{background:#282044;color:white}
-.side-label{font-size:10px;letter-spacing:2px;color:#68758d;margin:30px 10px 10px}
-main{flex:1;min-width:0;max-width:1500px;margin:auto;padding:26px 30px;width:100%}
-.topbar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px;gap:10px}
-.panel{background:linear-gradient(145deg,#152036,#101827);border:1px solid var(--line);border-radius:15px;padding:19px}
-.hero{background:linear-gradient(110deg,#30215b,#15334b);border:1px solid #514080;border-radius:17px;padding:27px;margin:22px 0}
-.hero h1{font-size:32px;margin:9px 0}
-.eyebrow{font-size:10px;letter-spacing:2px;color:#c6b2ff;font-weight:bold}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:17px 0}
-.stat{background:#141f33;border:1px solid var(--line);padding:17px;border-radius:13px}
-.stat strong{display:block;font-size:22px;margin-top:10px}
-.layout{display:grid;grid-template-columns:1.4fr .8fr;gap:15px;margin-top:16px}
-.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:23px 0 12px}
-.section-title h2{font-size:18px;margin:0}
-.badge{display:inline-block;border-radius:20px;padding:5px 9px;font-size:10px;font-weight:bold;white-space:nowrap}
-.owner{background:#493817;color:#ffdf83;border:1px solid #8b6b2b}
-.admin{background:#30204f;color:#d7b5ff;border:1px solid #7550b0}
-.member-badge{background:#202d42;color:#b4c3d8;border:1px solid #354761}
-.member{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:11px 4px;border-bottom:1px solid #293650}
-.member:last-child{border:0}
-.member-left{display:flex;align-items:center;gap:10px;min-width:0}
-.avatar{width:34px;height:34px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#8658ee,#26b9d9);font-weight:bold}
-.member-name{font-size:13px;font-weight:bold}
-.member-rank{background:#252044;color:#c9baff;border:1px solid #493a78;padding:6px 9px;border-radius:20px;font-size:10px;white-space:nowrap}
-.members-box{max-height:410px;overflow:auto}
-.ranks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.rank{padding:13px;border:1px solid var(--line);border-radius:12px;background:#141f33}
+aside{width:225px;flex-shrink:0;background:#0c1321;border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column}
+.nav{display:block;width:100%;text-align:left;border:0;background:none;color:#aab8ce;padding:13px;border-radius:9px;margin:3px 0}
+.nav:hover,.nav.active{background:#292044;color:white}
+.navheading{font-size:10px;letter-spacing:2px;color:#64748b;margin:30px 10px 12px}
+main{flex:1;min-width:0;max-width:1550px;margin:auto;padding:27px 32px;width:100%}
+.topbar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}
+.panel{background:linear-gradient(145deg,#162238,#101827);border:1px solid var(--line);border-radius:15px;padding:19px}
+.hero{background:linear-gradient(115deg,#302052,#183b51);border:1px solid #54427e;border-radius:18px;padding:28px;margin:22px 0}
+.hero h1{font-size:34px;margin:10px 0}
+.eyebrow{font-size:10px;color:#c9b5ff;letter-spacing:2px;font-weight:bold}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.stat{background:var(--panel);border:1px solid var(--line);padding:17px;border-radius:13px}
+.stat strong{display:block;font-size:23px;margin-top:9px}
+.layout{display:grid;grid-template-columns:1.3fr .7fr;gap:15px;margin-top:16px}
+.heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:24px 0 13px}
+.heading h2{font-size:18px;margin:0}
+.badge{font-size:10px;padding:5px 9px;border-radius:20px;font-weight:bold;white-space:nowrap}
+.owner{background:#493918;color:#ffe08b;border:1px solid #967338}
+.admin{background:#382353;color:#d6b5ff;border:1px solid #7855a9}
+.memberbadge{background:#24334b;color:#c0cce0;border:1px solid #40516e}
+.ranks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.rank{background:#141f32;border:1px solid var(--line);border-radius:13px;padding:14px;cursor:pointer;transition:.2s}
+.rank:hover{border-color:var(--purple);transform:translateY(-2px)}
+.rank.selected{border-color:var(--purple);box-shadow:0 0 0 1px #9874ff55}
 .rank h3{font-size:13px;margin:9px 0}
-.rank small{color:var(--muted)}
-.rank-num{font-size:10px;color:#8794aa}
-.progress{height:8px;background:#293650;border-radius:20px;overflow:hidden;margin-top:13px}
-.progress div{height:100%;background:linear-gradient(90deg,#9165ff,#35c9dd)}
-.table-wrap{overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:570px}
-td,th{padding:10px;text-align:left;border-bottom:1px solid var(--line);font-size:12px}
-th{font-size:10px;color:var(--muted)}
-.game{padding:20px;border:1px solid #54418a;border-radius:16px;background:linear-gradient(145deg,#1b1740,#101d35)}
-.game-area{height:190px;background:#090f20;border:1px solid #34415c;border-radius:12px;position:relative;overflow:hidden;margin:15px 0}
-.target{position:absolute;width:48px;height:48px;border:0;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#43d9ef);box-shadow:0 0 25px #9060ff;display:none}
-.scoreline{display:flex;justify-content:space-between;gap:10px}
+.ranknum{font-size:10px;color:#8997ad}
+.rankmembers{border-top:1px solid var(--line);padding-top:9px;margin-top:10px}
+.rankmember{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px}
+.avatar{width:29px;height:29px;border-radius:9px;background:linear-gradient(135deg,#8059ed,#30c6dc);display:grid;place-items:center;font-weight:bold;flex-shrink:0}
+.member{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.member:last-child{border:0}
+.memberleft{display:flex;align-items:center;gap:10px;min-width:0}
+.membername{font-size:13px;font-weight:bold}
+.ranktag{background:#30234d;color:#d5c4ff;padding:6px 9px;border-radius:20px;font-size:10px}
+.scroll{max-height:420px;overflow:auto}
+.gamegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.game{background:linear-gradient(145deg,#1d2140,#101c30);border:1px solid #443b72;border-radius:15px;padding:19px}
+.game h3{margin:0 0 8px}
+.gamearea{height:175px;background:#080e1b;border:1px solid #34425e;border-radius:12px;position:relative;overflow:hidden;margin:13px 0}
+.target{position:absolute;width:46px;height:46px;border:0;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#43d9ef);box-shadow:0 0 24px #9060ff;display:none}
+.center{text-align:center}
+.result{color:#bba5ff;font-size:13px;margin-top:12px}
+table{width:100%;border-collapse:collapse;min-width:550px}
+td,th{text-align:left;padding:11px;border-bottom:1px solid var(--line);font-size:12px}
+th{color:var(--muted);font-size:10px}
+.tablewrap{overflow:auto}
 .empty{padding:25px;text-align:center;color:var(--muted)}
-@media(max-width:900px){.sidebar{width:180px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
-@media(max-width:620px){.app{display:block}.sidebar{width:100%;display:block;padding:12px}.side-label{display:none}.sidebar nav{display:flex;overflow-x:auto}.nav{width:auto;white-space:nowrap;font-size:12px;padding:10px}main{padding:15px}.ranks{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:25px}}
+@media(max-width:900px){aside{width:185px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:620px){.app{display:block}aside{width:100%;display:block;padding:12px}.navheading{display:none}aside nav{display:flex;overflow:auto}.nav{width:auto;white-space:nowrap;font-size:12px;padding:10px}main{padding:14px}.ranks{grid-template-columns:repeat(2,minmax(0,1fr))}.gamegrid{grid-template-columns:1fr}.hero h1{font-size:26px}}
 </style>
 </head>
 <body>
 
 <section id="loginScreen">
-<div class="auth">
-<div class="logo">RANK<span>ED.</span></div>
-<p class="muted">PREMIUM MEMBER NETWORK</p>
-<div id="loginForm">
-<h2>Welcome back.</h2>
-<label>USERNAME</label>
-<input id="loginName" placeholder="Your username" maxlength="20">
-<label>PASSWORD</label>
-<input id="loginPassword" type="password" placeholder="Your password">
-<button class="btn" style="width:100%" onclick="login()">Sign in →</button>
-<p class="muted small" style="margin-top:18px">New member? <a onclick="showRegister()">Create an account</a></p>
-</div>
-<div id="registerForm" class="hidden">
-<h2>Create account.</h2>
-<label>USERNAME</label>
-<input id="newName" maxlength="20" placeholder="Choose a username">
-<label>PASSWORD</label>
-<input id="newPassword" type="password" placeholder="At least 8 characters">
-<label>CONFIRM PASSWORD</label>
-<input id="confirmPassword" type="password">
-<button class="btn" style="width:100%" onclick="register()">Create account →</button>
-<p class="muted small" style="margin-top:18px"><a onclick="showLogin()">Back to login</a></p>
-</div>
-<p id="message" class="small"></p>
-<p class="notice">Your account is stored securely using Supabase authentication.</p>
-</div>
+ <div class="auth">
+  <div class="logo">RANK<span>ED.</span></div>
+  <p class="muted small">THE ELITE MEMBER NETWORK</p>
+
+  <div id="loginForm">
+   <h2>Welcome back.</h2>
+   <label>USERNAME</label>
+   <input id="loginName" placeholder="Your username" maxlength="20">
+   <label>PASSWORD</label>
+   <input id="loginPassword" type="password" placeholder="Your password">
+   <button class="primary" style="width:100%" onclick="login()">SIGN IN →</button>
+   <p class="muted small">New member? <a onclick="showRegister()">Create account</a></p>
+  </div>
+
+  <div id="registerForm" class="hidden">
+   <h2>Create account.</h2>
+   <label>USERNAME</label>
+   <input id="newName" maxlength="20" placeholder="3-20 letters, numbers or _">
+   <label>PASSWORD</label>
+   <input id="newPassword" type="password" placeholder="At least 8 characters">
+   <label>CONFIRM PASSWORD</label>
+   <input id="confirmPassword" type="password">
+   <button class="primary" style="width:100%" onclick="register()">CREATE ACCOUNT →</button>
+   <p class="muted small"><a onclick="showLogin()">Back to login</a></p>
+  </div>
+  <p id="message" class="small"></p>
+ </div>
 </section>
 
-<div class="app hidden" id="website">
-<aside class="sidebar">
-<div class="logo">RANK<span>ED.</span></div>
-<div class="side-label">WORKSPACE</div>
-<nav>
-<button class="nav active" onclick="page('dashboard',this)">◈ Dashboard</button>
-<button class="nav" onclick="page('rankpage',this)">✦ Rank System</button>
-<button class="nav" onclick="page('members',this)">♙ Members</button>
-<button class="nav" onclick="page('minigame',this)">🎮 Mini Games</button>
-<button class="nav hidden" id="adminNav" onclick="page('admin',this)">⚙ Admin Panel</button>
-</nav>
-<div style="margin-top:25px" class="panel">
-<strong id="sideName">Member</strong>
-<p class="muted small" id="sideRole"></p>
-<button class="nav" onclick="logout()">↪ Log out</button>
-</div>
-</aside>
+<div id="website" class="app hidden">
+ <aside>
+  <div class="logo">RANK<span>ED.</span></div>
+  <div class="navheading">WORKSPACE</div>
+  <nav>
+   <button class="nav active" onclick="page('dashboard',this)">◈ Dashboard</button>
+   <button class="nav" onclick="page('rankpage',this)">✦ Rank System</button>
+   <button class="nav" onclick="page('members',this)">♙ Members</button>
+   <button class="nav" onclick="page('arcade',this)">🎮 Arcade</button>
+   <button class="nav hidden" id="adminNav" onclick="page('admin',this)">⚙ Admin Panel</button>
+  </nav>
+  <div class="panel" style="margin-top:22px">
+   <strong id="sideName">Member</strong>
+   <p id="sideRole" class="muted small"></p>
+   <button class="nav" onclick="logout()">↪ Log out</button>
+  </div>
+ </aside>
 
-<main>
-<div class="topbar">
-<div><h2 id="pageTitle">Dashboard</h2><span class="muted small">MEMBER NETWORK</span></div>
-<span id="topRole" class="badge member-badge">MEMBER</span>
+ <main>
+  <div class="topbar">
+   <div><h2 id="pageTitle">Dashboard</h2><span class="muted small">ELITE MEMBER NETWORK</span></div>
+   <span id="topRole" class="badge memberbadge">MEMBER</span>
+  </div>
+
+  <section id="dashboard">
+   <div class="hero">
+    <div class="eyebrow">PERSONAL OVERVIEW</div>
+    <h1 id="welcome">Welcome back.</h1>
+    <p class="muted">Your account. Your rank. Your community.</p>
+   </div>
+   <div class="stats">
+    <div class="stat"><span class="muted small">YOUR RANK</span><strong id="myRank">—</strong></div>
+    <div class="stat"><span class="muted small">YOUR ROLE</span><strong id="myRole">—</strong></div>
+    <div class="stat"><span class="muted small">MEMBERS</span><strong id="memberCount">0</strong></div>
+    <div class="stat"><span class="muted small">RANK LEVEL</span><strong id="rankLevel">1/39</strong></div>
+   </div>
+   <div class="layout">
+    <div class="panel">
+     <div class="heading"><h2>Your progression</h2></div>
+     <strong id="rankName">SLAVE: BRONZE</strong>
+     <div style="height:8px;background:#293951;border-radius:20px;margin:12px 0;overflow:hidden">
+      <div id="progressBar" style="height:100%;width:0;background:linear-gradient(90deg,#9874ff,#52d9e9)"></div>
+     </div>
+     <p id="progressText" class="muted small"></p>
+    </div>
+    <div class="panel">
+     <h2>Quick access</h2>
+     <button class="primary" style="width:100%;margin-bottom:9px" onclick="page('rankpage')">EXPLORE RANKS</button>
+     <button class="secondary" style="width:100%" onclick="page('arcade')">PLAY GAMES</button>
+    </div>
+   </div>
+   <div class="heading"><h2>🏆 Community leaderboard</h2><span class="badge memberbadge" id="leaderCount">0 MEMBERS</span></div>
+   <div class="panel"><div class="scroll" id="leaderboard"></div></div>
+   <div class="heading"><h2>Rank overview</h2></div>
+   <div class="ranks" id="topRanks"></div>
+  </section>
+
+  <section id="rankpage" class="hidden">
+   <div class="hero"><div class="eyebrow">OFFICIAL PROGRESSION</div><h1>Rank System</h1><p class="muted">Select a rank to see its members.</p></div>
+   <div id="selectedRank" class="panel hidden" style="margin-bottom:16px"></div>
+   <div class="ranks" id="allRanks"></div>
+  </section>
+
+  <section id="members" class="hidden">
+   <div class="hero"><div class="eyebrow">COMMUNITY</div><h1>Members</h1><p class="muted">Everyone in the network.</p></div>
+   <div class="panel">
+    <input id="search" placeholder="Search members..." oninput="renderMembers()">
+    <div id="memberList" class="scroll"></div>
+   </div>
+  </section>
+
+  <section id="arcade" class="hidden">
+   <div class="hero"><div class="eyebrow">ARCADE COLLECTION</div><h1>Mini Games</h1><p class="muted">Five challenges. Beat your own records.</p></div>
+   <div class="gamegrid">
+    <div class="game">
+     <h3>⚡ TAP RUSH</h3><p class="muted small">Hit the glowing target for 15 seconds.</p>
+     <div class="gamearea" id="tapArea">
+      <button class="target" id="tapTarget" onclick="tapHit()"></button>
+      <div id="tapMessage" class="center muted" style="padding-top:70px">Press start to play</div>
+     </div>
+     <p>Score: <b id="tapScore">0</b> · Time: <b id="tapTime">15</b></p>
+     <button class="primary" id="tapStart" onclick="startTap()">START</button>
+    </div>
+
+    <div class="game">
+     <h3>🎯 REACTION RUSH</h3><p class="muted small">Wait for green, then click.</p>
+     <div class="gamearea center" style="padding-top:65px" id="reactionDisplay">WAIT...</div>
+     <button class="primary" onclick="startReaction()">START</button>
+     <button class="secondary" onclick="reactionClick()">CLICK</button>
+     <p class="result" id="reactionResult"></p>
+    </div>
+
+    <div class="game">
+     <h3>🧠 MEMORY MASTER</h3><p class="muted small">Remember the number sequence.</p>
+     <div class="gamearea center" style="padding-top:65px;font-size:25px" id="memoryDisplay">READY?</div>
+     <input id="memoryInput" placeholder="Enter the sequence">
+     <button class="primary" onclick="startMemory()">START</button>
+     <button class="secondary" onclick="checkMemory()">CHECK</button>
+     <p class="result" id="memoryResult"></p>
+    </div>
+
+    <div class="game">
+     <h3>🔢 QUICK MATH</h3><p class="muted small">Solve the equation.</p>
+     <div class="gamearea center" style="padding-top:65px;font-size:25px" id="mathDisplay">READY?</div>
+     <input id="mathInput" type="number" placeholder="Your answer">
+     <button class="primary" onclick="newMath()">NEW QUESTION</button>
+     <button class="secondary" onclick="checkMath()">CHECK</button>
+     <p class="result" id="mathResult"></p>
+    </div>
+
+    <div class="game">
+     <h3>⌨️ WORD BLITZ</h3><p class="muted small">Type the displayed word correctly.</p>
+     <div class="gamearea center" style="padding-top:65px;font-size:25px" id="wordDisplay">READY?</div>
+     <input id="wordInput" placeholder="Type the word">
+     <button class="primary" onclick="newWord()">NEW WORD</button>
+     <button class="secondary" onclick="checkWord()">CHECK</button>
+     <p class="result" id="wordResult"></p>
+    </div>
+   </div>
+  </section>
+
+  <section id="admin" class="hidden">
+   <div class="hero"><div class="eyebrow">STAFF CONTROL CENTER</div><h1>Administration</h1><p class="muted">Manage community ranks.</p></div>
+   <div class="panel">
+    <div class="heading"><h2>Member management</h2><span class="badge admin">STAFF ACCESS</span></div>
+    <div class="tablewrap">
+     <table><thead><tr><th>USERNAME</th><th>ROLE</th><th>RANK</th><th>CHANGE</th></tr></thead>
+     <tbody id="adminRows"></tbody></table>
+    </div>
+   </div>
+  </section>
+ </main>
 </div>
 
-<section id="dashboard">
-<div class="hero">
-<div class="eyebrow">PERSONAL OVERVIEW</div>
-<h1 id="welcome">Welcome back.</h1>
-<p class="muted">Your account. Your progress. Your rank.</p>
-</div>
-<div class="stats">
-<div class="stat"><span class="muted small">YOUR RANK</span><strong id="myRank">—</strong></div>
-<div class="stat"><span class="muted small">YOUR ROLE</span><strong id="myRole">—</strong></div>
-<div class="stat"><span class="muted small">TOTAL MEMBERS</span><strong id="memberCount">0</strong></div>
-<div class="stat"><span class="muted small">RANK LEVEL</span><strong id="rankLevel">1/39</strong></div>
-</div>
-<div class="layout">
-<div class="panel">
-<div class="section-title"><h2>Your progression</h2></div>
-<strong id="rankName">SLAVE: BRONZE</strong>
-<div class="progress"><div id="progressBar"></div></div>
-<p class="muted small" id="progressText"></p>
-</div>
-<div class="panel">
-<div class="section-title"><h2>Quick access</h2></div>
-<button class="btn" style="width:100%;margin-bottom:9px" onclick="page('rankpage')">Explore ranks →</button>
-<button class="btn secondary" style="width:100%" onclick="page('minigame')">Play mini-game →</button>
-</div>
-</div>
-<div class="section-title"><div><h2>🏆 Community Leaderboard</h2><span class="muted small">Everyone can see everyone's rank.</span></div><span class="badge member-badge" id="leaderCount">0 MEMBERS</span></div>
-<div class="panel"><div class="members-box" id="leaderboard"></div></div>
-<div class="section-title"><h2>Rank overview</h2></div>
-<div class="ranks" id="topRanks"></div>
-</section>
-
-<section id="rankpage" class="hidden">
-<div class="hero"><div class="eyebrow">OFFICIAL PROGRESSION</div><h1>Rank System</h1><p class="muted">39 ranks. One progression ladder.</p></div>
-<div class="ranks" id="allRanks"></div>
-</section>
-
-<section id="members" class="hidden">
-<div class="hero"><div class="eyebrow">COMMUNITY</div><h1>Members</h1><p class="muted">Browse the community.</p></div>
-<div class="panel">
-<input id="search" placeholder="Search members..." oninput="renderMembers()">
-<div class="members-box" id="memberList"></div>
-</div>
-</section>
-
-<section id="minigame" class="hidden">
-<div class="hero"><div class="eyebrow">ARCADE</div><h1>Mini Games</h1><p class="muted">Beat your personal record.</p></div>
-<div class="game">
-<h2>⚡ TAP RUSH</h2>
-<p class="muted">Hit the glowing target as many times as possible in 15 seconds.</p>
-<div class="scoreline"><span>SCORE <b id="score">0</b></span><span>TIME <b id="timer">15</b>s</span><span>BEST <b id="best">0</b></span></div>
-<div class="game-area" id="gameArea">
-<button class="target" id="target" onclick="hitTarget()"></button>
-<div id="gameMessage" class="muted" style="position:absolute;inset:0;display:grid;place-items:center">Press START to play</div>
-</div>
-<button class="btn" id="startGame" onclick="startGame()">START GAME</button>
-</div>
-</section>
-
-<section id="admin" class="hidden">
-<div class="hero"><div class="eyebrow">STAFF CONTROL CENTER</div><h1>Administration</h1><p class="muted">Manage member ranks.</p></div>
-<div class="panel">
-<div class="section-title"><h2>Member management</h2><span class="badge admin">STAFF ACCESS</span></div>
-<div class="table-wrap"><table>
-<thead><tr><th>USERNAME</th><th>ROLE</th><th>CURRENT RANK</th><th>CHANGE RANK</th></tr></thead>
-<tbody id="adminRows"></tbody>
-</table></div>
-</div>
-</section>
-</main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* =========================================
-   ADD YOUR TWO SUPABASE VALUES BELOW
-========================================= */
+/* YOUR SUPABASE CONNECTION */
+const SUPABASE_URL="https://bytpztfhwdcuqozdzjeu.supabase.co";
+const SUPABASE_KEY="sb_publishable_FIx91UXDrhOyXAQ5mJ5kaw_6xrk1ZiV";
 
-const SUPABASE_URL = "https://bytpztfhwdcuqozdzjeu.supabase.co";
-const SUPABASE_KEY = "sb_publishable_FIx91UXDrhOyXAQ5mJ5kaw_6xrk1ZiV";
-
-/* ========================================= */
-
-const {createClient}=window.supabase;
-const db=createClient(SUPABASE_URL,SUPABASE_KEY,{
-  auth:{persistSession:true,autoRefreshToken:true}
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+ auth:{persistSession:true,autoRefreshToken:true}
 });
 
 const TIERS=["Bronze","Silver","Gold","Diamond","Elite","Champ","Unreal"];
 const RANKS=[
  ...["Slave","Bodyguard","Personlig Slave","Pølse","Medisterpølse"]
- .flatMap(group=>TIERS.map(tier=>group+": "+tier)),
+ .flatMap(group=>TIERS.map(t=>group+": "+t)),
  "Avocado","Kage","Special","Ejer"
 ];
 
-let currentUser=null;
-let profile=null;
-let members=[];
+let currentUser=null,profile=null,members=[];
 let refreshTimer=null;
-let gameTimer=null;
-let score=0;
-let timeLeft=15;
-let playing=false;
+let tapTimer=null,tapScore=0,tapTime=15,tapPlaying=false;
+let reactionState="idle",reactionStarted=0,reactionTimer=null;
+let memorySequence="",mathAnswer=null,wordAnswer="";
 
 const $=id=>document.getElementById(id);
+const emailFor=name=>name.toLowerCase()+"@ranked.example.com";
 
-function usernameEmail(name){
- return name.toLowerCase()+"@ranked.example.com";
-}
-
-function message(text,error=true){
+function say(text,error=true){
  $("message").textContent=text;
- $("message").style.color=error?"#fb7185":"#70e0a2";
+ $("message").style.color=error?"#fb7185":"#75e2a2";
 }
-
+function safe(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
 function showRegister(){
  $("loginForm").classList.add("hidden");
  $("registerForm").classList.remove("hidden");
- message("");
+ say("");
 }
-
 function showLogin(){
  $("registerForm").classList.add("hidden");
  $("loginForm").classList.remove("hidden");
- message("");
+ say("");
 }
 
 async function login(){
  const name=$("loginName").value.trim().toLowerCase();
  const password=$("loginPassword").value;
-
- if(!/^[a-z0-9_]{3,20}$/.test(name))
-  return message("Enter a valid username.");
-
- if(!password)return message("Enter your password.");
+ if(!/^[a-z0-9_]{3,20}$/.test(name))return say("Invalid username.");
+ if(!password)return say("Enter your password.");
 
  const {error}=await db.auth.signInWithPassword({
-  email:usernameEmail(name),password
+  email:emailFor(name),password
  });
-
- if(error)return message(error.message);
+ if(error)return say(error.message);
  await openWebsite();
 }
 
@@ -274,183 +309,155 @@ async function register(){
  const password=$("newPassword").value;
  const confirm=$("confirmPassword").value;
 
- if(!/^[a-z0-9_]{3,20}$/.test(name))
-  return message("Use 3-20 letters, numbers or underscores.");
+ if(!/^[a-z0-9_]{3,20}$/.test(name))return say("Use 3-20 letters, numbers or underscores.");
+ if(password.length<8)return say("Password must be at least 8 characters.");
+ if(password!==confirm)return say("Passwords do not match.");
 
- if(password.length<8)
-  return message("Password must be at least 8 characters.");
-
- if(password!==confirm)
-  return message("Passwords do not match.");
-
- const {error}=await db.auth.signUp({
-  email:usernameEmail(name),
+ const {data,error}=await db.auth.signUp({
+  email:emailFor(name),
   password,
   options:{data:{username:name}}
  });
 
- if(error)return message(error.message);
-
- await openWebsite();
-}
-
-async function logout(){
- stopGame();
- if(refreshTimer)clearInterval(refreshTimer);
- await db.auth.signOut();
- currentUser=null;
- profile=null;
- $("website").classList.add("hidden");
- $("loginScreen").classList.remove("hidden");
- showLogin();
+ if(error)return say(error.message);
+ if(data.session)await openWebsite();
+ else say("Account created. Check whether email confirmation is required.",false);
 }
 
 async function loadProfile(){
  const {data:{user},error:userError}=await db.auth.getUser();
  if(userError||!user)return false;
-
  const {data,error}=await db.from("profiles")
-  .select("id,username,role,rank")
-  .eq("id",user.id)
-  .single();
-
- if(error){
-  message("Profile error: "+error.message);
-  return false;
- }
-
- currentUser=user;
- profile=data;
- return true;
+  .select("id,username,role,rank").eq("id",user.id).single();
+ if(error){say("Profile error: "+error.message);return false;}
+ currentUser=user;profile=data;return true;
 }
 
 async function openWebsite(){
  $("loginScreen").classList.add("hidden");
  $("website").classList.remove("hidden");
-
- const ok=await loadProfile();
- if(!ok){
+ if(!await loadProfile()){
   $("website").classList.add("hidden");
   $("loginScreen").classList.remove("hidden");
   return;
  }
-
  page("dashboard");
  await updateWebsite();
-
  if(refreshTimer)clearInterval(refreshTimer);
- refreshTimer=setInterval(updateWebsite,5000);
+ refreshTimer=setInterval(updateWebsite,10000);
 }
 
-function isAdmin(){
+async function logout(){
+ stopTap();
+ if(refreshTimer)clearInterval(refreshTimer);
+ await db.auth.signOut();
+ currentUser=null;profile=null;
+ $("website").classList.add("hidden");
+ $("loginScreen").classList.remove("hidden");
+ showLogin();
+}
+
+function isStaff(){
  return profile&&["Owner","Admin Premium"].includes(profile.role);
 }
-
-function badgeFor(role){
+function roleBadge(role){
  if(role==="Owner")return '<span class="badge owner">♛ OWNER</span>';
  if(role==="Admin Premium")return '<span class="badge admin">✦ ADMIN PREMIUM</span>';
- return '<span class="badge member-badge">MEMBER</span>';
+ return '<span class="badge memberbadge">MEMBER</span>';
+}
+function memberRow(m,index){
+ return `<div class="member">
+ <div class="memberleft">
+  <div class="avatar">${safe(m.username[0].toUpperCase())}</div>
+  <div><div class="membername">${index===undefined?"":"#"+(index+1)+" "}${safe(m.username)}</div>
+  <div style="margin-top:5px">${roleBadge(m.role)}</div></div>
+ </div><span class="ranktag">${safe(m.rank)}</span>
+ </div>`;
 }
 
-function safe(value){
- return String(value).replace(/[&<>"']/g,c=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- }[c]));
+function rankCard(rank,i){
+ const holders=members.filter(m=>m.rank===rank);
+ return `<div class="rank" onclick="selectRank('${safe(rank)}')">
+ <div class="ranknum">RANK ${String(i+1).padStart(2,"0")}</div>
+ <h3>${safe(rank.toUpperCase())}</h3>
+ <span class="badge memberbadge">${holders.length} MEMBER${holders.length===1?"":"S"}</span>
+ <div class="rankmembers">
+ ${holders.length?holders.map(m=>`
+ <div class="rankmember">
+  <div class="avatar">${safe(m.username[0].toUpperCase())}</div>
+  <span>${safe(m.username)}</span>
+  ${m.role==="Owner"?'<span class="badge owner">OWNER</span>':""}
+  ${m.role==="Admin Premium"?'<span class="badge admin">ADMIN</span>':""}
+ </div>`).join(""):'<span class="muted small">No members yet</span>'}
+ </div></div>`;
 }
 
 function renderRanks(){
- const make=(rank,i)=>`
- <div class="rank">
- <div class="rank-num">RANK ${String(i+1).padStart(2,"0")}</div>
- <h3>${safe(rank.toUpperCase())}</h3>
- <small>${i===0?"STARTING RANK":i===38?"HIGHEST RANK":"LEVEL "+(i+1)}</small>
- </div>`;
- $("topRanks").innerHTML=RANKS.slice(0,6).map(make).join("");
- $("allRanks").innerHTML=RANKS.map(make).join("");
+ $("topRanks").innerHTML=RANKS.slice(0,6).map(rankCard).join("");
+ $("allRanks").innerHTML=RANKS.map(rankCard).join("");
 }
-
-function memberRow(user,index){
- return `<div class="member">
- <div class="member-left">
- <div class="avatar">${safe(user.username[0].toUpperCase())}</div>
- <div><div class="member-name">${index===undefined?"":("#"+(index+1)+" ")}${safe(user.username)}</div>
- <div style="margin-top:5px">${badgeFor(user.role)}</div></div>
- </div>
- <span class="member-rank">${safe(user.rank)}</span>
- </div>`;
+function selectRank(rank){
+ const holders=members.filter(m=>m.rank===rank);
+ $("selectedRank").classList.remove("hidden");
+ $("selectedRank").innerHTML=`
+ <h2>${safe(rank)}</h2>
+ <p class="muted small">${holders.length} member(s) currently hold this rank.</p>
+ ${holders.length?holders.map(m=>memberRow(m)).join(""):'<div class="empty">No members yet.</div>'}`;
+ document.querySelectorAll(".rank").forEach(el=>el.classList.remove("selected"));
 }
-
-function renderLeaderboard(){
- const sorted=[...members].sort((a,b)=>{
-  const ai=RANKS.indexOf(a.rank),bi=RANKS.indexOf(b.rank);
-  return bi-ai||a.username.localeCompare(b.username);
- });
- $("leaderCount").textContent=sorted.length+" MEMBERS";
- $("leaderboard").innerHTML=sorted.map(memberRow).join("")||
- '<div class="empty">No members yet.</div>';
-}
-
 function renderMembers(){
  const q=($("search").value||"").toLowerCase();
  const found=members.filter(m=>m.username.includes(q));
- $("memberList").innerHTML=found.map(m=>memberRow(m)).join("")||
- '<div class="empty">No members found.</div>';
+ $("memberList").innerHTML=found.map(m=>memberRow(m)).join("")||'<div class="empty">No members found.</div>';
+}
+function renderLeaderboard(){
+ const sorted=[...members].sort((a,b)=>{
+  return RANKS.indexOf(b.rank)-RANKS.indexOf(a.rank)||a.username.localeCompare(b.username);
+ });
+ $("leaderCount").textContent=sorted.length+" MEMBERS";
+ $("leaderboard").innerHTML=sorted.map(memberRow).join("")||'<div class="empty">No members yet.</div>';
 }
 
 async function renderAdmin(){
- if(!isAdmin())return;
+ if(!isStaff())return;
  const {data,error}=await db.from("profiles")
   .select("username,role,rank").order("username");
  if(error)return;
 
- $("adminRows").innerHTML=data.map(user=>`
- <tr>
- <td><strong>${safe(user.username)}</strong></td>
- <td>${safe(user.role)}</td>
- <td>${safe(user.rank)}</td>
- <td><select data-user="${safe(user.username)}"
- onchange="changeRank(this.dataset.user,this.value)">
- ${RANKS.map(r=>`<option value="${safe(r)}"
- ${r===user.rank?"selected":""}>${safe(r)}</option>`).join("")}
- </select></td>
- </tr>`).join("");
+ $("adminRows").innerHTML=data.map(m=>{
+  const isVillads=m.username.toLowerCase()==="villads";
+  const canEdit=!isVillads||profile.username.toLowerCase()==="villads";
+  return `<tr>
+   <td><b>${safe(m.username)}</b></td>
+   <td>${safe(m.role)}</td>
+   <td>${safe(m.rank)}</td>
+   <td><select data-user="${safe(m.username)}"
+    ${canEdit?"":"disabled"}
+    onchange="changeRank(this.dataset.user,this.value)">
+    ${RANKS.map(r=>`<option value="${safe(r)}" ${r===m.rank?"selected":""}>${safe(r)}</option>`).join("")}
+   </select></td>
+  </tr>`;
+ }).join("");
 }
 
 async function changeRank(username,rank){
- if(!isAdmin()||!RANKS.includes(rank))return;
-
+ if(!isStaff()||!RANKS.includes(rank))return;
  const {error}=await db.rpc("change_member_rank",{
   target_username:username,new_rank:rank
  });
-
- if(error){
-  alert("Rank change failed: "+error.message);
-  await renderAdmin();
-  return;
- }
-
+ if(error){alert(error.message);await renderAdmin();return;}
  await updateWebsite();
 }
 
 async function updateWebsite(){
  if(!currentUser)return;
-
- await loadProfile();
- if(!profile)return;
-
+ if(!await loadProfile())return;
  const {data,error}=await db.from("profiles")
-  .select("id,username,role,rank")
-  .order("username");
-
- if(error){
-  console.error(error);
-  return;
- }
-
+  .select("id,username,role,rank").order("username");
+ if(error){console.error(error);return;}
  members=data||[];
 
  const index=RANKS.indexOf(profile.rank);
-
  $("welcome").textContent="Welcome back, "+profile.username+".";
  $("myRank").textContent=profile.rank;
  $("myRole").textContent=profile.role;
@@ -462,96 +469,128 @@ async function updateWebsite(){
  $("sideName").textContent=profile.username;
  $("sideRole").textContent=profile.role;
  $("topRole").textContent=profile.role.toUpperCase();
- $("adminNav").classList.toggle("hidden",!isAdmin());
+ $("adminNav").classList.toggle("hidden",!isStaff());
 
- renderRanks();
- renderLeaderboard();
- renderMembers();
-
- if(isAdmin())await renderAdmin();
+ renderRanks();renderLeaderboard();renderMembers();
+ if(isStaff())await renderAdmin();
 }
 
 function page(id,button){
- if(id==="admin"&&!isAdmin())return;
-
- ["dashboard","rankpage","members","minigame","admin"]
+ if(id==="admin"&&!isStaff())return;
+ ["dashboard","rankpage","members","arcade","admin"]
  .forEach(s=>$(s).classList.add("hidden"));
-
  $(id).classList.remove("hidden");
-
  document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));
-
  if(button)button.classList.add("active");
  else document.querySelectorAll(".nav").forEach(n=>{
   if(n.getAttribute("onclick")?.includes("'"+id+"'"))n.classList.add("active");
  });
-
  $("pageTitle").textContent={
- dashboard:"Dashboard",rankpage:"Rank System",
- members:"Members",minigame:"Mini Games",admin:"Admin Panel"
+ dashboard:"Dashboard",rankpage:"Rank System",members:"Members",
+ arcade:"Arcade",admin:"Admin Panel"
  }[id];
-
- if(id!=="minigame")stopGame();
+ if(id!=="arcade")stopTap();
 }
 
 /* TAP RUSH */
-
-function startGame(){
- stopGame();
- score=0;timeLeft=15;playing=true;
- $("score").textContent=0;
- $("timer").textContent=15;
- $("gameMessage").style.display="none";
- $("target").style.display="block";
- $("startGame").disabled=true;
- $("startGame").textContent="PLAYING...";
- moveTarget();
-
- gameTimer=setInterval(()=>{
-  timeLeft--;
-  $("timer").textContent=timeLeft;
-  if(timeLeft<=0)finishGame();
+function stopTap(){
+ if(tapTimer)clearInterval(tapTimer);
+ tapTimer=null;tapPlaying=false;
+ if($("tapTarget"))$("tapTarget").style.display="none";
+ if($("tapStart"))$("tapStart").disabled=false;
+}
+function moveTap(){
+ const a=$("tapArea");
+ $("tapTarget").style.left=Math.random()*(a.clientWidth-50)+"px";
+ $("tapTarget").style.top=Math.random()*(a.clientHeight-50)+"px";
+}
+function startTap(){
+ stopTap();tapScore=0;tapTime=15;tapPlaying=true;
+ $("tapScore").textContent=0;$("tapTime").textContent=15;
+ $("tapMessage").style.display="none";
+ $("tapTarget").style.display="block";
+ $("tapStart").disabled=true;moveTap();
+ tapTimer=setInterval(()=>{
+  tapTime--;$("tapTime").textContent=tapTime;
+  if(tapTime<=0){
+   stopTap();$("tapMessage").style.display="block";
+   $("tapMessage").textContent="TIME UP! Score: "+tapScore;
+  }
  },1000);
 }
-
-function moveTarget(){
- const area=$("gameArea");
- $("target").style.left=Math.random()*(area.clientWidth-50)+"px";
- $("target").style.top=Math.random()*(area.clientHeight-50)+"px";
+function tapHit(){
+ if(!tapPlaying)return;
+ tapScore++;$("tapScore").textContent=tapScore;moveTap();
 }
 
-function hitTarget(){
- if(!playing)return;
- score++;
- $("score").textContent=score;
- moveTarget();
+/* REACTION RUSH */
+function startReaction(){
+ clearTimeout(reactionTimer);
+ reactionState="waiting";
+ $("reactionDisplay").textContent="WAIT FOR GREEN...";
+ $("reactionDisplay").style.background="#7c2727";
+ reactionTimer=setTimeout(()=>{
+  reactionState="go";reactionStarted=performance.now();
+  $("reactionDisplay").textContent="CLICK NOW!";
+  $("reactionDisplay").style.background="#145b3a";
+ },1200+Math.random()*3000);
+}
+function reactionClick(){
+ if(reactionState==="waiting"){
+  clearTimeout(reactionTimer);reactionState="idle";
+  $("reactionResult").textContent="Too early! Try again.";
+ }else if(reactionState==="go"){
+  const ms=Math.round(performance.now()-reactionStarted);
+  reactionState="idle";
+  $("reactionDisplay").textContent=ms+" ms";
+  $("reactionResult").textContent=ms<250?"Amazing!":ms<400?"Great reaction!":"Keep practising!";
+ }else $("reactionResult").textContent="Press START first.";
 }
 
-function finishGame(){
- if(!playing)return;
- playing=false;
- clearInterval(gameTimer);
- gameTimer=null;
- $("target").style.display="none";
- $("gameMessage").style.display="grid";
- $("gameMessage").textContent="TIME'S UP! Score: "+score;
- $("startGame").disabled=false;
- $("startGame").textContent="PLAY AGAIN";
+/* MEMORY MASTER */
+function startMemory(){
+ memorySequence=Array.from({length:5},()=>Math.floor(Math.random()*10)).join("");
+ $("memoryDisplay").textContent=memorySequence;
+ $("memoryInput").value="";$("memoryResult").textContent="Remember the sequence!";
+ setTimeout(()=>{
+  if($("memoryDisplay").textContent===memorySequence)
+   $("memoryDisplay").textContent="?????";
+ },2500);
+}
+function checkMemory(){
+ if(!memorySequence)return;
+ const ok=$("memoryInput").value.trim()===memorySequence;
+ $("memoryResult").textContent=ok?"Perfect memory!":"Not quite. Correct sequence: "+memorySequence;
 }
 
-function stopGame(){
- if(gameTimer)clearInterval(gameTimer);
- gameTimer=null;
- playing=false;
- if($("target"))$("target").style.display="none";
- if($("startGame")){
-  $("startGame").disabled=false;
-  $("startGame").textContent="START GAME";
- }
+/* QUICK MATH */
+function newMath(){
+ const a= Math.floor(Math.random()*40)+5;
+ const b= Math.floor(Math.random()*40)+5;
+ mathAnswer=a+b;
+ $("mathDisplay").textContent=a+" + "+b+" = ?";
+ $("mathInput").value="";$("mathResult").textContent="";
+}
+function checkMath(){
+ if(mathAnswer===null)return;
+ const ok=Number($("mathInput").value)===mathAnswer;
+ $("mathResult").textContent=ok?"Correct!":"Try again. Answer: "+mathAnswer;
 }
 
-/* RESTORE LOGIN AFTER PAGE REFRESH */
+/* WORD BLITZ */
+function newWord(){
+ const words=["PULSE","RANKED","LEGEND","VICTORY","DIAMOND","ARCADE","CHAMPION","ELITE","SPECIAL","AVOCADO"];
+ wordAnswer=words[Math.floor(Math.random()*words.length)];
+ $("wordDisplay").textContent=wordAnswer;
+ $("wordInput").value="";$("wordResult").textContent="";
+}
+function checkWord(){
+ if(!wordAnswer)return;
+ const ok=$("wordInput").value.trim().toUpperCase()===wordAnswer;
+ $("wordResult").textContent=ok?"Perfect typing!":"Not quite. Word: "+wordAnswer;
+}
 
+/* RESTORE LOGIN */
 (async()=>{
  const {data:{session}}=await db.auth.getSession();
  if(session)await openWebsite();
