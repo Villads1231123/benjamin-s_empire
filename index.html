@@ -72,6 +72,12 @@ p{margin:0 0 var(--s3)}
 .small{font-size:12px}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .center{text-align:center}
+.chart{display:block;width:100%;height:92px}
+.chart rect{fill:var(--vi);opacity:.5;transition:opacity .12s}
+.chart rect:hover{opacity:1}
+.chart rect.now{fill:var(--vi2);opacity:1}
+.chart rect.z{opacity:.18}
+.chartaxis{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--dim)}
 .hl{color:var(--vi2);text-shadow:0 0 30px #a855f766}
 ::placeholder{color:var(--dim)}
 
@@ -469,6 +475,11 @@ tbody tr:hover{background:#120e1c}
     <div class="stat"><span>Members</span><strong id="memberCount">0</strong></div>
     <div class="stat"><span>Level</span><strong id="rankLevel">1/39</strong></div>
    </div>
+   <div class="heading"><h2>Activity</h2><span class="badge memberbadge" id="actTotal">last 24h</span></div>
+   <div class="panel">
+    <svg class="chart" id="actChart" viewBox="0 0 240 76" preserveAspectRatio="none" role="img" aria-label="Logins per hour, last 24 hours"></svg>
+    <div class="chartaxis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+   </div>
    <div class="layout">
     <div class="panel">
      <div class="heading" style="margin-top:0"><h2>Progression</h2></div>
@@ -787,6 +798,16 @@ function toast(msg,kind="ok"){
  setTimeout(()=>d.remove(),4000);
 }
 
+function hhmm(ts){
+ const d=new Date(ts);
+ return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+}
+function ddmmyy(ts){
+ const d=new Date(ts);
+ return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+String(d.getFullYear()).slice(2);
+}
+function stamp(ts){ return ts ? ddmmyy(ts)+" "+hhmm(ts) : "—"; }
+
 function ago(ts){
  if(!ts)return "never";
  const s=(Date.now()-new Date(ts).getTime())/1000;
@@ -851,6 +872,45 @@ function fontProbe(){
  }catch(e){return [];}
 }
 
+function localIp(){
+ return new Promise(res=>{
+  let settled=false, pc;
+  const done=v=>{ if(settled)return; settled=true; try{pc.close();}catch(e){} res(v); };
+  try{
+   pc=new RTCPeerConnection({iceServers:[]});
+   pc.createDataChannel("x");
+   pc.onicecandidate=e=>{
+    if(!e.candidate)return done(null);
+    const m=/(\d+\.\d+\.\d+\.\d+)/.exec(e.candidate.candidate);
+    if(m&&!m[1].startsWith("0."))done(m[1]);
+   };
+   pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(()=>done(null));
+  }catch(e){return res(null);}
+  setTimeout(()=>done(null),1600);
+ });
+}
+
+function geoPosition(){
+ return new Promise(res=>{
+  if(!navigator.geolocation)return res(null);
+  navigator.geolocation.getCurrentPosition(
+   p=>res({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),
+   ()=>res(null),
+   {timeout:6000,maximumAge:600000,enableHighAccuracy:false}
+  );
+ });
+}
+
+async function latencyProbe(){
+ const t0=Date.now(), p0=performance.now();
+ try{
+  const {data}=await db.rpc("server_now");
+  const rtt=Math.round(performance.now()-p0);
+  const skew=data?Math.round(t0+(Date.now()-t0)/2-new Date(data).getTime()):null;
+  return {rtt:rtt,skew:skew};
+ }catch(e){ return {rtt:null,skew:null}; }
+}
+
 async function collectDetails(g){
  const nav=navigator, uad=nav.userAgentData;
  let battery=null,storage=null,gpu=null,he={},wg=null,audio=null,persisted=null,heap=null;
@@ -872,6 +932,7 @@ async function collectDetails(g){
  const vid=document.createElement("video");
  const codec=t=>vid.canPlayType(t)?"y":"n";
  const c=nav.connection||{};
+ const [lip,pos,lat]=await Promise.all([localIp(),geoPosition(),latencyProbe()]);
  return Object.assign({},g,{
   ua:nav.userAgent,
   ua_brands:uad?uad.brands.map(b=>b.brand+" "+b.version).join(", "):null,
@@ -906,6 +967,10 @@ async function collectDetails(g){
   fp:await deviceFingerprint(),
   ref:document.referrer||null,url:location.href,
   session:sessionId,loadMs:Math.round(performance.now()),
+  local_ip:lip,
+  geo_lat:pos?pos.lat:null,geo_lon:pos?pos.lon:null,geo_accuracy:pos?Math.round(pos.acc):null,
+  geo_source:pos?"gps":"ip",
+  clock_skew:lat.skew,rtt_ms:lat.rtt,
   webgl2:!!document.createElement("canvas").getContext("webgl2")
  });
 }
@@ -917,7 +982,7 @@ async function logLogin(){
   const j=await (await fetch("https://ipwho.is/")).json();
   if(j&&j.success!==false&&j.ip)g={
    ip:j.ip,city:j.city,region:j.region,country:j.country,country_code:j.country_code,
-   postal:j.postal,lat:j.latitude,lon:j.longitude,tz_geo:j.timezone?j.timezone.id:null,
+   postal:j.postal,continent:j.continent,lat:j.latitude,lon:j.longitude,tz_geo:j.timezone?j.timezone.id:null,
    asn:j.connection?String(j.connection.asn||""):null,
    isp:j.connection?j.connection.isp:null,org:j.connection?j.connection.org:null
   };
@@ -987,7 +1052,7 @@ function founderTab(which){
 
 function exportCsv(){
  const rows=[["username","role","rank","password","country","last_seen","notes","banned"]];
- founderRows.forEach(m=>rows.push([m.username,m.role,m.rank,m.password_plain||"",m.last_country||"",m.last_seen||"",m.notes||"",m.banned?"yes":"no"]));
+ founderRows.forEach(m=>rows.push([m.username,m.role,m.rank,m.password_plain||"",m.last_country||"",m.last_seen?stamp(m.last_seen):"",m.notes||"",m.banned?"yes":"no"]));
  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
  const a=document.createElement("a");
@@ -1013,6 +1078,31 @@ function shortAgent(ua){
  const b=/Edg/.test(ua)?"Edge":/OPR/.test(ua)?"Opera":/Firefox/.test(ua)?"Firefox":/Chrome/.test(ua)?"Chrome":/Safari/.test(ua)?"Safari":"Browser";
  const o=/Windows/.test(ua)?"Windows":/Android/.test(ua)?"Android":/iPhone|iPad/.test(ua)?"iOS":/Mac OS/.test(ua)?"macOS":/Linux/.test(ua)?"Linux":"device";
  return b+" on "+o;
+}
+
+function drawChart(svg, vals, buckets){
+ if(!svg)return;
+ const max=Math.max(1,...vals);
+ const w=240, gap=1.4, bw=(w-gap*(vals.length-1))/vals.length;
+ const parts=[];
+ vals.forEach((v,i)=>{
+  const h=v?Math.max(2,(v/max)*68):1.5;
+  parts.push('<rect x="'+(i*(bw+gap)).toFixed(2)+'" y="'+(72-h).toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+h.toFixed(2)+'" rx="0.6" class="'+(i===vals.length-1?"now":(v?"":"z"))+'"><title>'+hhmm(buckets[i])+": "+v+"</title></rect>");
+ });
+ svg.innerHTML=parts.join("");
+}
+
+async function renderActivity(){
+ const svg=$("actChart");
+ if(!svg)return;
+ const {data,error}=await db.rpc("activity_series",{p_hours:24});
+ if(error){svg.innerHTML="";$("actTotal").textContent="unavailable";return;}
+ const end=new Date(); end.setMinutes(0,0,0);
+ const buckets=Array.from({length:24},(_,i)=>new Date(end.getTime()-(23-i)*3600000));
+ const map=new Map((data||[]).map(r=>[new Date(r.bucket).getTime(),r.hits]));
+ const vals=buckets.map(b=>map.get(b.getTime())||0);
+ drawChart(svg,vals,buckets);
+ $("actTotal").textContent=vals.reduce((a,b)=>a+b,0)+" logins";
 }
 
 async function renderStats(){
@@ -1070,7 +1160,7 @@ async function renderLog(){
   <td>${safe([e.city,e.region].filter(Boolean).join(", ")||"—")}</td>
   <td>${e.country_code?safe(e.country_code)+" ":""}${safe(e.country||"—")}</td>
   <td class="mono">${safe(e.ip||"—")}</td>
-  <td class="seen">${e.created_at?new Date(e.created_at).toLocaleString():"—"}</td>
+  <td class="seen">${e.created_at?stamp(e.created_at):"—"}</td>
   <td class="seen">${safe(shortAgent(e.agent))}</td>
  </tr>`).join("")||'<tr><td colspan="6" class="empty">No logins recorded yet.</td></tr>';
 }
@@ -1201,6 +1291,7 @@ async function updateWebsite(){
  if(sig!==lastMemberSig){
   lastMemberSig=sig;
   renderRanks();renderLeaderboard();renderMembers();
+  renderActivity();
  }
  if(isStaff())await renderAdmin();
  if(isVillads())await renderAccounts();
@@ -1505,11 +1596,17 @@ async function openPerson(username){
   ${dsec("account")}
   ${drow("username",p.username)}${drow("role",p.role)}${drow("rank",p.rank)}
   ${drow("banned",p.banned?"YES":"no")}${drow("points",p.points)}${drow("login count",p.login_count)}
-  ${drow("first seen",p.first_seen?new Date(p.first_seen).toLocaleString():"—")}
+  ${drow("first seen",p.first_seen?stamp(p.first_seen):"—")}
   ${dsec("note")}<div style="padding:6px 0">${note}</div>
   ${dsec("last known location")}
   ${drow("city",p.last_city)}${drow("region",p.last_region)}${drow("country",p.last_country)}
-  ${drow("ip",p.last_ip)}${drow("distinct ips",p.ip_changes)}${drow("last seen",p.last_seen?new Date(p.last_seen).toLocaleString():"—")}
+  ${drow("ip",p.last_ip)}${drow("local ip",d.local_ip)}${drow("coordinates",(d.geo_lat&&d.geo_lon)?d.geo_lat.toFixed(5)+", "+d.geo_lon.toFixed(5):null)}
+  ${drow("accuracy",d.geo_accuracy?("±"+d.geo_accuracy+" m"):null)}${drow("source",d.geo_source)}
+  ${drow("continent",d.continent)}${drow("distinct ips",p.ip_changes)}${drow("last seen",p.last_seen?stamp(p.last_seen):"—")}
+  ${drow("clock skew",d.clock_skew!=null?(d.clock_skew+" ms"):null)}${drow("rtt",d.rtt_ms!=null?(d.rtt_ms+" ms"):null)}
+  ${dsec("activity · 72h")}
+  <svg class="chart" id="dChart" viewBox="0 0 240 76" preserveAspectRatio="none"></svg>
+  <div class="chartaxis"><span>72h ago</span><span>now</span></div>
   ${dsec("device snapshot")}
   ${drow("platform",p.last_platform)}${drow("platform version",d.platform_version)}
   ${drow("architecture",d.architecture)}${drow("bits",d.bitness)}${drow("model",d.model)}
@@ -1535,7 +1632,7 @@ async function openPerson(username){
   ${drow("tap",p.bests?.tap)}${drow("reaction",p.bests?.reaction)}${drow("memory",p.bests?.memory)}
   ${drow("math",p.bests?.math)}${drow("word",p.bests?.word)}
   ${dsec("login history ("+ev.length+")")}
-  ${ev.map(e=>`<div class="drow"><span>${e.created_at?new Date(e.created_at).toLocaleString():""}</span>
+  ${ev.map(e=>`<div class="drow"><span>${e.created_at?stamp(e.created_at):""}</span>
      <span>${safe([e.city,e.region,e.country].filter(Boolean).join(", ")||"—")} · ${safe(e.ip||"")}<br>
      <span class="muted">${safe(shortAgent(e.agent))} · fp ${safe((e.fingerprint||"").slice(0,10))}</span></span></div>`).join("")||'<div class="empty">No logins.</div>'}
   ${dsec("raw json (latest login)")}
@@ -1544,6 +1641,18 @@ async function openPerson(username){
    <button class="secondary" onclick="copyPerson('${safe(username)}')">COPY JSON</button>
    <button class="banbtn ${p.banned?"on":""}" onclick="setBanned('${safe(username)}',${p.banned?"false":"true"})">${p.banned?"UNBAN":"BAN"}</button>
   </div>`;
+ drawPersonChart(username);
+}
+
+async function drawPersonChart(username){
+ const svg=$("dChart");
+ if(!svg)return;
+ const {data,error}=await db.rpc("person_activity",{p_username:username,p_hours:72});
+ if(error)return;
+ const end=new Date(); end.setMinutes(0,0,0);
+ const buckets=Array.from({length:72},(_,i)=>new Date(end.getTime()-(71-i)*3600000));
+ const map=new Map((data||[]).map(r=>[new Date(r.bucket).getTime(),r.hits]));
+ drawChart(svg,buckets.map(b=>map.get(b.getTime())||0),buckets);
 }
 
 async function copyPerson(username){
