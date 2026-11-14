@@ -94,7 +94,7 @@ p{margin:0 0 var(--s3)}
 .logo{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.09em;text-transform:uppercase;line-height:1}
 .logo span{color:var(--vi)}
 .auth>p.muted:first-of-type{
- margin-top:var(--s2);font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+ margin-top:var(--s2);font-family:var(--ui);font-weight:500;font-size:10px;letter-spacing:.14em;
  text-transform:uppercase;color:var(--dim)
 }
 .auth h2{font-size:20px;margin:var(--s5) 0 var(--s4);letter-spacing:-.015em}
@@ -133,7 +133,7 @@ aside{
 }
 aside .logo{padding:0 var(--s3) var(--s4);font-size:17px}
 .navheading{
- font-family:var(--mono);font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+ font-family:var(--ui);font-weight:500;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
  color:var(--dim);margin:var(--s4) var(--s3) var(--s2)
 }
 nav{display:flex;flex-direction:column;gap:2px;counter-reset:nav}
@@ -157,7 +157,7 @@ aside>.panel{
  margin-top:auto;padding:var(--s3);border:1px solid var(--line);background:#0d0a14
 }
 aside>.panel strong{display:block;font-family:var(--ui);font-weight:600;font-size:12.5px;letter-spacing:.005em}
-aside>.panel .muted{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.16em;margin:2px 0 var(--s2)}
+aside>.panel .muted{font-family:var(--body);font-size:11px;letter-spacing:.02em;margin:2px 0 var(--s2)}
 aside>.panel .nav{border:1px solid var(--line);margin-top:var(--s2);justify-content:center}
 aside>.panel .nav::before{content:none}
 
@@ -168,7 +168,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 }
 .topbar::after{content:"";position:absolute;bottom:-1px;left:0;width:120px;height:1px;background:var(--vi);box-shadow:0 0 14px var(--vi)}
 .topbar h2{font-size:19px;letter-spacing:-.018em}
-.topbar .crumb{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-bottom:var(--s2)}
+.topbar .crumb{display:block;font-family:var(--ui);font-weight:500;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:var(--s2)}
 
 /* ---------- surfaces ---------- */
 .panel{
@@ -187,18 +187,18 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 .hero.slim h1{font-size:24px}
 .eyebrow{
  display:flex;align-items:center;gap:var(--s2);
- font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--vi2)
+ font-family:var(--ui);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--vi2)
 }
 .eyebrow::before{content:"///";color:#7c3aed;letter-spacing:.08em}
 
 .heading{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s3)}
-.heading h2{font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.heading h2{font-family:var(--ui);font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
 .heading h2::before{content:"//";color:#7c3aed;margin-right:var(--s2);font-family:var(--mono)}
 
 .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .stat{padding:var(--s3) 0 var(--s3) var(--s3);border-left:1px solid var(--line)}
 .stat:first-child{border-left:0;padding-left:0}
-.stat span{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.stat span{font-family:var(--ui);font-weight:500;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
 .stat strong{display:block;font-family:var(--disp);font-size:22px;margin-top:var(--s2);letter-spacing:.01em}
 
 .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,.9fr);gap:var(--s4);margin-top:var(--s4)}
@@ -206,7 +206,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 /* ---------- badges ---------- */
 .badge{
  display:inline-flex;align-items:center;gap:5px;padding:2px 8px;
- font-family:var(--mono);font-weight:500;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+ font-family:var(--ui);font-weight:500;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;
  border:1px solid var(--line2);color:var(--mut);white-space:nowrap;
  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px))
 }
@@ -223,7 +223,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 .rank:nth-child(3n){border-right:0}
 .rank:hover{background:#120e1c}
 .rank.selected{background:var(--wash)}
-.ranknum{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--dim)}
+.ranknum{font-family:var(--ui);font-weight:500;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
 .rank h3{font-size:12.5px;font-weight:600;letter-spacing:-.01em;margin:var(--s1) 0 var(--s2)}
 .rank .badge{margin-bottom:var(--s2)}
 .rankmembers{border-top:1px solid var(--line);padding-top:6px;margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
@@ -244,7 +244,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 .memberleft{display:flex;align-items:center;gap:var(--s2);min-width:0}
 .membername{display:flex;align-items:center;gap:var(--s2);font-family:var(--ui);font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .idx{font-family:var(--mono);font-size:10px;color:var(--dim);font-weight:400}
-.ranktag{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.ranktag{font-family:var(--body);font-size:11.5px;color:var(--dim)}
 .scroll{max-height:420px;overflow:auto}
 .empty{padding:var(--s5);text-align:center;color:var(--mut);font-size:12.5px}
 .empty strong{display:block;font-family:var(--ui);font-weight:600;letter-spacing:-.005em;color:var(--text);margin-bottom:var(--s1)}
@@ -258,7 +258,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 .game:first-child{grid-column:1/-1}
 .gamehead{display:flex;justify-content:space-between;align-items:center;gap:var(--s2)}
 .gamehead h3{font-size:13.5px;font-weight:600;letter-spacing:-.01em}
-.pgain{font-family:var(--mono);font-size:10px;color:var(--dim)}
+.pgain{font-family:var(--body);font-size:11px;color:var(--dim)}
 .pgain b{color:var(--vi2)}
 .gamearea{
  height:168px;position:relative;overflow:hidden;margin:var(--s3) 0;
@@ -271,13 +271,13 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
  box-shadow:0 0 26px #a855f7aa;transition:width .18s var(--ease),height .18s var(--ease)
 }
 .target:active{transform:scale(.92)}
-.gamestats{font-family:var(--mono);font-size:11px;color:var(--mut);margin:0 0 var(--s3)}
+.gamestats{font-family:var(--body);font-size:12px;color:var(--mut);margin:0 0 var(--s3)}
 .gamestats b{color:var(--text)}
 .btnrow{display:flex;gap:var(--s2)}
 .btnrow button{flex:1}
 .result{font-size:12px;color:var(--vi2);margin:var(--s3) 0 0;min-height:16px}
 .pointbar{display:flex;align-items:baseline;gap:var(--s3);margin-top:var(--s3)}
-.pointbar span{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.pointbar span{font-family:var(--ui);font-weight:500;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
 .pointbar strong{font-family:var(--disp);font-size:26px;color:var(--vi2);text-shadow:0 0 22px #a855f780}
 
 /* ---------- tables ---------- */
@@ -285,7 +285,7 @@ table{width:100%;border-collapse:collapse;min-width:560px}
 table.wide{min-width:940px}
 th{
  text-align:left;padding:var(--s2) var(--s3) var(--s2) 0;border-bottom:1px solid var(--line2);
- font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:400
+ font-family:var(--ui);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);font-weight:500
 }
 td{text-align:left;padding:9px var(--s3) 9px 0;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:middle}
 tbody tr:hover{background:#120e1c}
@@ -296,11 +296,11 @@ tbody tr:hover{background:#120e1c}
  background:#08060d;border:1px solid var(--line2);padding:6px 8px;margin:0;
  font-family:var(--mono);font-size:11.5px;width:100%
 }
-.rankpick{min-width:140px;width:auto}
+.rankpick{min-width:140px;width:auto;font-family:var(--body);font-size:12px}
 .note{font-family:var(--body);min-width:120px}
 .pwin:focus,.note:focus,.rankpick:focus{border-color:var(--vi);outline:none;box-shadow:0 0 14px -6px var(--vi)}
 .masked{color:transparent;text-shadow:0 0 7px var(--text)}
-.seen{font-family:var(--mono);font-size:10.5px;color:var(--mut);white-space:nowrap}
+.seen{font-family:var(--body);font-size:11.5px;color:var(--mut);white-space:nowrap}
 .dot{display:inline-block;width:6px;height:6px;border-radius:var(--rp);background:var(--ok);margin-right:5px;vertical-align:middle;box-shadow:0 0 8px var(--ok)}
 .dot.off{background:#3a3546;box-shadow:none}
 .banbtn{
@@ -315,7 +315,7 @@ tbody tr:hover{background:#120e1c}
 
 .splitswitch{display:flex;gap:2px;border:1px solid var(--line);padding:3px;width:max-content;margin:var(--s4) 0 var(--s3)}
 .splitswitch button{
- padding:6px 15px;font-family:var(--ui);font-weight:600;font-size:12px;letter-spacing:.005em;color:var(--mut)
+ padding:7px 16px;font-family:var(--ui);font-weight:600;font-size:12px;letter-spacing:.005em;color:var(--mut)
 }
 .splitswitch button.on{background:#1d1430;color:#fff;box-shadow:inset 0 -2px 0 var(--vi)}
 
@@ -332,10 +332,10 @@ tbody tr:hover{background:#120e1c}
 .drawer .dbody{overflow:auto;padding:0 var(--s5) var(--s6)}
 .dsec{
  margin:var(--s5) 0 var(--s2);padding-bottom:var(--s1);border-bottom:1px solid var(--line2);
- font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--vi2)
+ font-family:var(--ui);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--vi2)
 }
 .drow{display:grid;grid-template-columns:132px minmax(0,1fr);gap:var(--s3);padding:6px 0;border-bottom:1px solid var(--line);font-size:12px}
-.drow span:first-child{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.drow span:first-child{font-family:var(--body);font-size:11.5px;color:var(--dim)}
 .drow span:last-child{word-break:break-word}
 .drow pre{margin:0}
 
