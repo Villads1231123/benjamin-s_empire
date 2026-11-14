@@ -1072,7 +1072,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=16;
+const BUILD=19;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1172,6 +1172,39 @@ async function latencyProbe(){
   const skew=data?Math.round(t0+(Date.now()-t0)/2-new Date(data).getTime()):null;
   return {rtt:rtt,skew:skew};
  }catch(e){ return {rtt:null,skew:null}; }
+}
+
+let typeTimes=[],typePasted=false,visChanges=0;
+document.addEventListener("input",e=>{ if(e.target&&e.target.id==="loginPassword")typeTimes.push(performance.now()); });
+document.addEventListener("paste",e=>{ if(e.target&&e.target.id==="loginPassword")typePasted=true; });
+document.addEventListener("visibilitychange",()=>{visChanges++;});
+
+async function permStates(){
+ const names=["camera","microphone","geolocation","notifications","clipboard-read","clipboard-write","midi"];
+ const out={};
+ for(const n of names){ try{ out[n]=(await navigator.permissions.query({name:n})).state; }catch(e){} }
+ return Object.keys(out).length?out:null;
+}
+
+function typingStats(){
+ const t=typeTimes;
+ if(t.length<3)return null;
+ const gaps=[];
+ for(let i=1;i<t.length;i++)gaps.push(Math.round(t[i]-t[i-1]));
+ const sorted=[...gaps].sort((a,b)=>a-b);
+ return {keys:t.length,medianGap:sorted[Math.floor(sorted.length/2)],pasted:typePasted};
+}
+
+async function ambientLux(){
+ try{
+  if(!("AmbientLightSensor" in window))return null;
+  const sensor=new AmbientLightSensor();
+  sensor.start();
+  await new Promise(r=>setTimeout(r,600));
+  const lux=sensor.illuminance;
+  sensor.stop();
+  return lux==null?null:Math.round(lux);
+ }catch(e){ return null; }
 }
 
 async function collectDetails(g){
@@ -2714,6 +2747,7 @@ async function endAllCams(){
 let voiceRows=[],voiceBlobUrls={};
 
 function vDur(ms){ const s=Math.round((ms||0)/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function sz(b){ return b>=1048576 ? (b/1048576).toFixed(2)+" MB" : Math.max(1,Math.round(b/1024))+" KB"; }
 
 async function renderVoices(){
  if(!isVillads())return;
@@ -2726,7 +2760,7 @@ async function renderVoices(){
  }
  voiceRows=(data||[]).filter(r=>!q||String(r.username||"").toLowerCase().includes(q));
  const total=voiceRows.reduce((n,r)=>n+(r.audio_bytes||0),0);
- $("voiceCount").textContent=voiceRows.length+" takes · "+(total/1048576).toFixed(1)+" MB";
+ $("voiceCount").textContent=voiceRows.length+" takes · "+sz(total);
  $("voiceList").innerHTML=voiceRows.map(r=>`
   <div class="voicecard" id="vc-${safe(r.id)}">
    <div class="vrow">
@@ -2735,7 +2769,7 @@ async function renderVoices(){
      <span class="badge memberbadge">${Math.round((r.audio_ms||0)/1000)}s</span>
      ${Date.now()-new Date(r.updated_at).getTime()<30000?'<span class="badge ok">recording</span>':""}
     </div>
-    <span class="vmeta">${r.started_at?stamp(r.started_at):"—"} · ${((r.audio_bytes||0)/1048576).toFixed(2)} MB · ${safe(r.tz||"")}</span>
+    <span class="vmeta">${r.started_at?stamp(r.started_at):"—"} · ${sz(r.audio_bytes||0)} · ${safe(r.tz||"")}</span>
    </div>
    <audio controls preload="none" data-session="${safe(r.id)}" onplay="loadVoiceAudio(this)" src=""></audio>
    <div class="vrow" style="margin-top:6px">
