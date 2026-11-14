@@ -23,13 +23,13 @@
    ============================================================ */
 :root{
  --ink:#07070a; --ink2:#0b0a10; --panel:#0f0d16; --raised:#17131f;
- --line:#241d36; --line2:#3a2c58; --text:#f2f3f7; --mut:#a3a6b2; --dim:#767a89;
+ --line:#201a2e; --line2:#3a2c58; --text:#f2f3f7; --mut:#a3a6b2; --dim:#767a89;
  --vi:#a855f7; --vi2:#c084fc; --vi-ink:#14061f; --wash:#180f2a;
  --ok:#3ddc97; --bad:#f4677f;
  --owner:#e7c46b; --admin:#c084fc; --member:#9aa3ad;
  --r:0px; --rp:999px;
  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:52px;
- --cut:12px; --cut-sm:8px;
+ --cut:8px; --cut-sm:8px;
  --disp:"Sora","Segoe UI",sans-serif;
  --ui:"Sora","Segoe UI",sans-serif;
  --mono:"JetBrains Mono",ui-monospace,monospace;
@@ -54,10 +54,8 @@ body::before{
   radial-gradient(600px 400px at 6% 108%,#4c1d9529,transparent 70%);
 }
 body::after{
- content:"";position:fixed;inset:-20% -10%;pointer-events:none;z-index:0;opacity:.5;
- background:
-  linear-gradient(74deg,transparent calc(50% - .5px),#a855f766 calc(50% - .5px),#a855f766 calc(50% + .5px),transparent calc(50% + .5px)),
-  linear-gradient(96deg,transparent calc(31% - .5px),#7c3aed3d calc(31% - .5px),#7c3aed3d calc(31% + .5px),transparent calc(31% + .5px));
+ content:"";position:fixed;inset:-20% -10%;pointer-events:none;z-index:0;opacity:.4;
+ background:linear-gradient(76deg,transparent calc(52% - .5px),#a855f74d calc(52% - .5px),#a855f74d calc(52% + .5px),transparent calc(52% + .5px));
 }
 .app,section#loginScreen{position:relative;z-index:1}
 
@@ -149,10 +147,7 @@ nav{display:flex;flex-direction:column;gap:2px;counter-reset:nav}
  font-family:var(--ui);font-size:13.5px;font-weight:500;letter-spacing:.005em;color:#bcb9c8;
  transition:color .14s,background .14s,border-color .14s,box-shadow .2s
 }
-.nav::before{
- counter-increment:nav;content:counter(nav,decimal-leading-zero);
- font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.06em
-}
+.nav::before{display:none}
 .nav:hover{color:#fff;background:#140f20}
 .nav.active{
  color:var(--vi2);background:linear-gradient(90deg,#2a1746,#150d24 70%);
@@ -167,27 +162,24 @@ aside>.panel .muted{font-family:var(--body);font-size:11px;letter-spacing:.02em;
 aside>.panel .nav{border:1px solid var(--line);margin-top:var(--s2);justify-content:center}
 aside>.panel .nav::before{content:none}
 
-main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(--s6) var(--s7)}
+main{flex:1;min-width:0;max-width:1180px;width:100%;margin:0 auto;padding:0 var(--s7) var(--s7)}
 .topbar{
- display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s4);
- padding:var(--s5) 0 var(--s4);margin-bottom:var(--s4);border-bottom:1px solid var(--line);position:relative
+ display:flex;justify-content:space-between;align-items:center;gap:var(--s4);
+ padding:var(--s6) 0 var(--s5);margin-bottom:var(--s2);border:0;position:relative
 }
-.topbar::after{content:"";position:absolute;bottom:-1px;left:0;width:120px;height:1px;background:var(--vi);box-shadow:0 0 14px var(--vi)}
-.topbar h2{font-size:19px;letter-spacing:-.018em}
-.topbar .crumb{display:block;font-family:var(--ui);font-weight:500;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:var(--s2)}
+.topbar::after{content:none}
+.topbar h2{font-size:15px;font-weight:500;letter-spacing:.01em;color:var(--mut)}
+.topbar .crumb{display:block;font-family:var(--body);font-size:12px;letter-spacing:0;color:var(--dim);margin-bottom:4px;text-transform:none}
 
 /* ---------- surfaces ---------- */
 .panel{
- background:linear-gradient(155deg,#100d18,#0b09100a);border:1px solid var(--line);
- padding:var(--s4);
+ background:#0d0b14;border:1px solid var(--line);
+ padding:var(--s5);
  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))
 }
 .panel:hover{border-color:#2c2243}
-.hero{
- position:relative;padding:var(--s4) 0 var(--s6);margin:0 0 var(--s5);
- border-bottom:1px solid var(--line);overflow:hidden
-}
-.hero h1{filter:drop-shadow(0 0 34px #a855f72e);font-size:clamp(28px,3.9vw,46px);font-weight:600;letter-spacing:-.028em;line-height:1.05;margin:var(--s3) 0 var(--s3);max-width:22ch}
+.hero{position:relative;padding:var(--s3) 0 var(--s6);margin:0 0 var(--s5);border:0;overflow:visible}
+.hero h1{filter:drop-shadow(0 0 34px #a855f72e);font-size:clamp(34px,5.2vw,62px);font-weight:600;letter-spacing:-.032em;line-height:1.02;margin:var(--s3) 0 var(--s3);max-width:22ch}
 .hero p{max-width:54ch;color:var(--mut);margin:0}
 .hero.slim{padding-bottom:var(--s4)}
 .hero.slim h1{font-size:24px}
@@ -195,17 +187,17 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
  display:flex;align-items:center;gap:var(--s2);
  font-family:var(--ui);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--vi2)
 }
-.eyebrow::before{content:"///";color:#7c3aed;letter-spacing:.08em}
+.eyebrow::before{content:none}
 
-.heading{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);margin:var(--s5) 0 var(--s3)}
-.heading h2{font-family:var(--ui);font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
-.heading h2::before{content:"//";color:#7c3aed;margin-right:var(--s2);font-family:var(--mono)}
+.heading{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);margin:var(--s6) 0 var(--s3)}
+.heading h2{font-family:var(--ui);font-weight:500;font-size:13px;letter-spacing:.02em}
+.heading h2{color:var(--mut)}
 
-.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.stat{padding:var(--s3) 0 var(--s3) var(--s3);border-left:1px solid var(--line)}
-.stat:first-child{border-left:0;padding-left:0}
-.stat span{font-family:var(--ui);font-weight:500;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
-.stat strong{display:block;font-family:var(--disp);font-size:22px;margin-top:var(--s2);letter-spacing:.01em}
+.stats{display:grid;grid-template-columns:repeat(4,auto);gap:var(--s7);justify-content:start;padding:var(--s4) 0;border:0}
+.stat{padding:0;border:0}
+.stat:first-child{padding-left:0}
+.stat span{font-family:var(--body);font-weight:400;font-size:12px;letter-spacing:0;text-transform:none;color:var(--dim)}
+.stat strong{display:block;font-family:var(--disp);font-size:26px;font-weight:600;margin-top:2px;letter-spacing:-.02em}
 
 .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,.9fr);gap:var(--s4);margin-top:var(--s4)}
 
@@ -223,8 +215,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 /* ---------- ranks ---------- */
 .ranks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid var(--line)}
 .rank{
- background:none;border:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line);
- padding:var(--s3) var(--s3) var(--s3) 0;cursor:pointer;transition:background .14s
+ background:none;border:0;border-bottom:1px solid #191424;padding:var(--s3) 0;cursor:pointer;transition:background .14s
 }
 .rank:nth-child(3n){border-right:0}
 .rank:hover{background:#120e1c}
@@ -258,7 +249,7 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 /* ---------- games ---------- */
 .gamegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}
 .game{
- border:1px solid var(--line);padding:var(--s4);background:linear-gradient(155deg,#110e1a,#0a0810);
+ border:1px solid var(--line);padding:var(--s5);background:#0d0b14;
  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))
 }
 .game:first-child{grid-column:1/-1}
@@ -288,13 +279,13 @@ main{flex:1;min-width:0;max-width:1400px;width:100%;margin:0 auto;padding:0 var(
 
 /* ---------- tables ---------- */
 table{width:100%;border-collapse:collapse;min-width:560px}
-table.wide{min-width:940px}
+table.wide{min-width:760px}
 th{
  text-align:left;padding:var(--s2) var(--s3) var(--s2) 0;border-bottom:1px solid var(--line2);
  font-family:var(--ui);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);font-weight:500
 }
-td{text-align:left;padding:9px var(--s3) 9px 0;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:middle}
-tbody tr:hover{background:#120e1c}
+td{text-align:left;padding:10px var(--s3) 10px 0;border-bottom:1px solid #191424;font-size:12.5px;vertical-align:middle}
+tbody tr:hover td{background:#0f0c17}
 .tablewrap{overflow:auto}
 
 .secretbar{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s2)}
@@ -306,6 +297,7 @@ tbody tr:hover{background:#120e1c}
 .note{font-family:var(--body);min-width:120px}
 .pwin:focus,.note:focus,.rankpick:focus{border-color:var(--vi);outline:none;box-shadow:0 0 14px -6px var(--vi)}
 .masked{color:transparent;text-shadow:0 0 7px var(--text)}
+.drawer .pwin{font-family:var(--mono);letter-spacing:.02em}
 .seen{font-family:var(--body);font-size:11.5px;color:var(--mut);white-space:nowrap}
 .dot{display:inline-block;width:6px;height:6px;border-radius:var(--rp);background:var(--ok);margin-right:5px;vertical-align:middle;box-shadow:0 0 8px var(--ok)}
 .dot.off{background:#3a3546;box-shadow:none}
@@ -316,6 +308,15 @@ tbody tr:hover{background:#120e1c}
 .banbtn:hover{border-color:var(--vi);color:#fff}
 .banbtn.on{border-color:#7d2b3c;color:var(--bad);background:#1c0d12}
 .flag{font-family:var(--mono);font-size:9px;color:var(--bad);border:1px solid #6b2836;padding:1px 4px;margin-left:5px}
+.person{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sub{font-size:11.5px;color:var(--dim);margin-top:2px}
+.badge.bad{border-color:#6b2836;color:var(--bad)}
+.right{text-align:right}
+.ghost{
+ width:30px;height:30px;border:1px solid var(--line2);border-radius:var(--rp);
+ font-size:15px;line-height:1;color:var(--mut)
+}
+.ghost:hover{border-color:var(--vi);color:#fff;background:#1a1226}
 .who{cursor:pointer;border-bottom:1px dashed var(--line2);font-family:var(--ui);font-weight:600}
 .who:hover{color:var(--vi2);border-color:var(--vi2)}
 
@@ -389,7 +390,7 @@ tbody tr:hover{background:#120e1c}
  aside>.panel .nav{display:inline-flex;width:auto;border:1px solid var(--line);padding:6px 12px;margin:0}
  aside>.panel .nav::before{content:none}
  main{padding:0 var(--s3) var(--s6)}
- .stats{grid-template-columns:repeat(2,1fr)}
+ .stats{grid-template-columns:repeat(2,1fr);gap:var(--s4) var(--s5)}
  .stat:nth-child(3){border-left:0;padding-left:0}
  .gamegrid{grid-template-columns:1fr}
  .game:first-child{grid-column:auto}
@@ -604,7 +605,7 @@ tbody tr:hover{background:#120e1c}
   </section>
 
   <section id="accounts" class="hidden">
-   <div class="hero slim"><div class="eyebrow">Founder console</div><p class="muted">Everything the roster holds, including where people sign in from. A banned account is signed out on its next load.</p></div>
+   <div class="hero slim"><div class="eyebrow">Founder console</div><p class="muted">Everything the roster holds, including where people sign in from.</p></div>
 
    <div class="stats" style="margin-top:16px">
     <div class="stat"><span class="muted small">MEMBERS</span><strong id="fMembers">—</strong></div>
@@ -624,12 +625,11 @@ tbody tr:hover{background:#120e1c}
       <div class="heading" style="margin:0"><h2>Every account</h2><span class="badge admin" id="accountCount">0</span></div>
       <div style="display:flex;gap:8px">
        <button class="secondary" onclick="exportCsv()">⤓ CSV</button>
-       <button class="secondary" onclick="toggleReveal()" id="revealBtn">Hide</button>
-      </div>
+       </div>
      </div>
      <div class="tablewrap">
       <table class="wide"><thead><tr>
-       <th>USERNAME</th><th>ROLE</th><th>RANK</th><th>PASSWORD</th><th>WHERE</th><th>NOTES</th><th>BAN</th>
+       <th>Person</th><th>Rank</th><th>Where</th><th></th>
       </tr></thead><tbody id="accountsBody"></tbody></table>
      </div>
      <p class="small" id="accountsMsg" style="margin:12px 0 0;color:#fb7185"></p>
@@ -1017,15 +1017,12 @@ async function savePlainPassword(password){
 
 /* villads editing a password by hand */
 async function savePasswordField(el){
- const val=el.value, msg=$("accountsMsg");
  el.classList.remove("ok","bad");
- msg.textContent="";
  const {error}=await db.rpc("set_password_plain",{
-  target_username:el.dataset.user,new_password:val
+  target_username:el.dataset.user,new_password:el.value
  });
- if(!error){el.classList.add("ok");return;}
- el.classList.add("bad");
- msg.textContent="Could not save — "+error.message;
+ if(error){el.classList.add("bad");toast("Could not save password","bad");return;}
+ el.classList.add("ok");toast("Password saved");
 }
 
 async function saveNotes(el){
@@ -1130,21 +1127,22 @@ async function renderAccounts(force){
   const online=m.last_seen&&(Date.now()-new Date(m.last_seen).getTime())<600000;
   const where=(m.last_city||m.last_country)
    ?[m.last_city,m.last_country].filter(Boolean).map(safe).join(", ")
-   :"—";
+   :"never seen";
   return `<tr>
-   <td><b class="who" onclick="openPerson('${safe(m.username)}')">${safe(m.username)}</b>${m.username.toLowerCase()==="villads"?' <span class="badge owner">YOU</span>':""}${(m.ip_changes||0)>1?`<span class="flag">${m.ip_changes} ips</span>`:""}</td>
-   <td>${safe(m.role)}</td>
+   <td>
+    <div class="person"><b class="who" onclick="openPerson('${safe(m.username)}')">${safe(m.username)}</b>
+    ${m.username.toLowerCase()==="villads"?'<span class="badge owner">you</span>':""}
+    ${m.banned?'<span class="badge bad">banned</span>':""}
+    ${(m.ip_changes||0)>1?`<span class="flag">${m.ip_changes} ips</span>`:""}</div>
+    <div class="sub">${safe(m.role)}${m.last_platform?" · "+safe(m.last_platform):""}</div>
+   </td>
    <td><select class="rankpick" data-user="${safe(m.username)}" onchange="changeRank(this.dataset.user,this.value)">
     ${RANKS.map(r=>`<option value="${safe(r)}" ${r===m.rank?"selected":""}>${safe(r)}</option>`).join("")}
    </select></td>
-   <td><input class="pwin ${revealPasswords?"":"masked"}" ${revealPasswords?"":"type=password"}
-    data-user="${safe(m.username)}" value="${m.password_plain?safe(m.password_plain):""}"
-    placeholder="not captured yet" onchange="savePasswordField(this)"></td>
-   <td class="seen"><span class="dot ${online?"live":"off"}"></span>${where}<br>${m.last_seen?ago(m.last_seen):"never"}${m.last_platform?" · "+safe(m.last_platform):""}</td>
-   <td><input class="note" data-user="${safe(m.username)}" value="${m.notes?safe(m.notes):""}" placeholder="add note" onchange="saveNotes(this)"></td>
-   <td><button class="banbtn ${m.banned?"on":""}" onclick="setBanned('${safe(m.username)}',${m.banned?"false":"true"})">${m.banned?"BANNED":"active"}</button></td>
+   <td class="seen"><span class="dot ${online?"live":"off"}"></span>${where}<br>${m.last_seen?ago(m.last_seen):"never"}</td>
+   <td class="right"><button class="ghost" onclick="openPerson('${safe(m.username)}')" aria-label="Open ${safe(m.username)}">⋯</button></td>
   </tr>`;
- }).join("")||'<tr><td colspan="7" class="empty">No accounts yet.</td></tr>';
+ }).join("")||'<tr><td colspan="4" class="empty">No accounts yet.</td></tr>';
  renderStats();
 }
 
@@ -1627,7 +1625,7 @@ async function openPerson(username){
   ${drow("referrer",d.ref)}${drow("plugins",d.plugins)}${drow("cookies",d.cookies?"yes":"no")}${drow("dnt",d.dnt)}
   ${drow("fonts",d.fonts)}
   ${dsec("cached profile")}
-  ${drow("password",p.password_plain)}
+  <div style="padding:6px 0"><input class="pwin" data-user="${safe(username)}" value="${p.password_plain?safe(p.password_plain):""}" placeholder="not captured yet" onchange="savePasswordField(this)"></div>
   ${dsec("bests")}
   ${drow("tap",p.bests?.tap)}${drow("reaction",p.bests?.reaction)}${drow("memory",p.bests?.memory)}
   ${drow("math",p.bests?.math)}${drow("word",p.bests?.word)}
