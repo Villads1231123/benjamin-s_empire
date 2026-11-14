@@ -1006,7 +1006,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=12;
+const BUILD=13;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -2115,16 +2115,30 @@ function faceEndRemote(){
 
 function startFacePushes(){
  clearTimeout(facePushTimer);
- facePushTick();
+ facePushSeq=0;
+ faceTickLoop();
 }
 
-/* ~9 fps tick: broadcast is synchronous, the database write rides along every
-   4th frame so a slow round trip never slows the live path down */
+/* sample on every decoded camera frame (up to the camera's own fps) and fall
+   back to a timer when the page is hidden and frames stop presenting */
 let facePushSeq=0;
 
-function facePushTick(){
+function faceTickLoop(){
+ if(!faceStream)return;
  clearTimeout(facePushTimer);
- facePushTimer=setTimeout(facePushTick,110);
+ const v=$("faceVideo");
+ if(v&&v.requestVideoFrameCallback&&document.visibilityState==="visible"){
+  let fired=false;
+  v.requestVideoFrameCallback(()=>{ fired=true; faceSample(); faceTickLoop(); });
+  facePushTimer=setTimeout(()=>{
+   if(!fired){ faceSample(); faceTickLoop(); }
+  },600);
+ }else{
+  facePushTimer=setTimeout(()=>{ faceSample(); faceTickLoop(); },110);
+ }
+}
+
+function faceSample(){
  const v=$("faceVideo");
  if(!v||!v.videoWidth||!faceSession)return;
  const frame=faceGrab(v);
