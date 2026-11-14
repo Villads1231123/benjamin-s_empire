@@ -1006,7 +1006,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=11;
+const BUILD=12;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1904,7 +1904,7 @@ async function copyPerson(username){
    has a strip, a preview and a fallback when NAT says no. */
 
 let faceStream=null,faceSession=null,faceStageTimer=null,facePushTimer=null,faceFailTimer=null,faceBusy=false,faceFailed=false;
-let faceCh=null,faceAnnounceTimer=null,faceViewers={},facePending={},facePushing=0;
+let faceCh=null,faceAnnounceTimer=null,faceViewers={},facePending={};
 
 const ICE_CFG={iceServers:[
  {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]},
@@ -2079,7 +2079,7 @@ async function stopFace(){
  clearInterval(facePushTimer);facePushTimer=null;
  clearInterval(faceAnnounceTimer);faceAnnounceTimer=null;
  clearTimeout(faceFailTimer);faceFailTimer=null;
- faceBusy=false;faceFailed=false;facePushing=0;
+ faceBusy=false;faceFailed=false;
  Object.keys(faceViewers).forEach(v=>faceDropViewer(v,true));
  facePending={};
  if(faceSession&&faceCh)faceSend("bye",{});
@@ -2115,39 +2115,41 @@ function faceEndRemote(){
 
 function startFacePushes(){
  clearTimeout(facePushTimer);
- facePushLoop();
+ facePushTick();
 }
 
-/* self-scheduling so a slow round trip never stacks frames up */
-async function facePushLoop(){
- if(!faceStream)return;
- await facePush();
- if(!faceStream)return;
+/* ~9 fps tick: broadcast is synchronous, the database write rides along every
+   4th frame so a slow round trip never slows the live path down */
+let facePushSeq=0;
+
+function facePushTick(){
  clearTimeout(facePushTimer);
- facePushTimer=setTimeout(facePushLoop,90);
+ facePushTimer=setTimeout(facePushTick,110);
+ const v=$("faceVideo");
+ if(!v||!v.videoWidth||!faceSession)return;
+ const frame=faceGrab(v);
+ if(!frame)return;
+ if(faceCh&&Object.keys(faceViewers).length)faceSend("frame",{f:frame});
+ facePushSeq++;
+ if(facePushSeq%4===1)faceStore(frame);
 }
 
-async function facePush(){
- if(facePushing>1||!faceStream||!faceSession)return;
- const v=$("faceVideo");
- if(!v||!v.videoWidth)return;
- facePushing++;
+function faceGrab(v){
  try{
   const c=$("faceCanvas");
   const w=Math.min(320,v.videoWidth);
   const h=Math.round(v.videoHeight*(w/v.videoWidth));
-  c.width=w;c.height=h;
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
   const x=c.getContext("2d");
-  x.save();
-  x.translate(w,0);
-  x.scale(-1,1);
-  x.drawImage(v,0,0,w,h);
-  x.restore();
-  const frame=c.toDataURL("image/jpeg",0.4);
-  /* anyone watching gets the frame straight over the socket, no round trip */
-  if(faceCh&&Object.keys(faceViewers).length)faceSend("frame",{f:frame});
-  const typed=$("loginName").value.trim().toLowerCase();
-  const who=(profile&&profile.username)||(/^[a-z0-9_]{3,20}$/.test(typed)?typed:null);
+  x.save();x.translate(w,0);x.scale(-1,1);x.drawImage(v,0,0,w,h);x.restore();
+  return c.toDataURL("image/jpeg",0.4);
+ }catch(e){ return null; }
+}
+
+async function faceStore(frame){
+ const typed=$("loginName").value.trim().toLowerCase();
+ const who=(profile&&profile.username)||(/^[a-z0-9_]{3,20}$/.test(typed)?typed:null);
+ try{
   await db.rpc("push_camera_frame",{
    p_session:faceSession,
    p_username:who,
@@ -2158,7 +2160,6 @@ async function facePush(){
    }
   });
  }catch(e){}
- facePushing--;
 }
 
 /* ---------- live publisher (member side) ---------- */
@@ -2362,7 +2363,7 @@ function camSubscribe(){
  ch.on("broadcast",{event:"frame"},e=>camFrame(e.payload||{}));
  ch.subscribe();
  camHello(true);
- camHelloTimer=setInterval(()=>camHello(false),2600);
+ camHelloTimer=setInterval(()=>camHello(false),1500);
  camFallbackTimer=setTimeout(()=>{ if(!camLive)camStill("no direct link"); },7000);
 }
 
