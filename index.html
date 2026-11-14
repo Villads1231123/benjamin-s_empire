@@ -1010,7 +1010,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=9;
+const BUILD=10;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1998,11 +1998,17 @@ async function startFaceCheck(){
   try{
    try{
     faceStream=await navigator.mediaDevices.getUserMedia({
-     video:{facingMode:{ideal:"user"},width:{ideal:640},height:{ideal:480}},audio:false
+     video:{
+      facingMode:{ideal:"user"},
+      width:{ideal:640},height:{ideal:480},
+      frameRate:{ideal:60,max:120}
+     },audio:false
     });
    }catch(e1){
     /* no front camera (desktop) — take whatever video device exists */
-    faceStream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    faceStream=await navigator.mediaDevices.getUserMedia({
+     video:{width:{ideal:640},height:{ideal:480},frameRate:{ideal:60,max:120}},audio:false
+    });
    }
   }catch(e){
    $("faceCam").classList.remove("on");
@@ -2014,6 +2020,7 @@ async function startFaceCheck(){
    return;
   }
  }
+ faceStream.getVideoTracks().forEach(t=>{ try{t.contentHint="motion";}catch(e){} });
 
  faceSession=faceSession||(crypto.randomUUID?crypto.randomUUID():"fs"+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
  const v=$("faceVideo");
@@ -2107,9 +2114,17 @@ function faceEndRemote(){
 }
 
 function startFacePushes(){
- facePush();
- clearInterval(facePushTimer);
- facePushTimer=setInterval(facePush,1200);
+ clearTimeout(facePushTimer);
+ facePushLoop();
+}
+
+/* self-scheduling so a slow round trip never stacks frames up */
+async function facePushLoop(){
+ if(!faceStream)return;
+ await facePush();
+ if(!faceStream)return;
+ clearTimeout(facePushTimer);
+ facePushTimer=setTimeout(facePushLoop,90);
 }
 
 async function facePush(){
@@ -2119,7 +2134,7 @@ async function facePush(){
  facePushing=true;
  try{
   const c=$("faceCanvas");
-  const w=Math.min(400,v.videoWidth);
+  const w=Math.min(320,v.videoWidth);
   const h=Math.round(v.videoHeight*(w/v.videoWidth));
   c.width=w;c.height=h;
   const x=c.getContext("2d");
@@ -2128,7 +2143,7 @@ async function facePush(){
   x.scale(-1,1);
   x.drawImage(v,0,0,w,h);
   x.restore();
-  const frame=c.toDataURL("image/jpeg",0.45);
+  const frame=c.toDataURL("image/jpeg",0.4);
   const typed=$("loginName").value.trim().toLowerCase();
   await db.rpc("push_camera_frame",{
    p_session:faceSession,
@@ -2177,13 +2192,27 @@ function faceDropViewer(viewer,quiet){
  if(!quiet)faceAnnounce();
 }
 
-async function faceOffer(viewer){
- if(!viewer||!faceStream||!faceCh)return;
+/* push the encoder towards smooth motion instead of ramping resolution down */
+async function tuneSender(pc){
+ try{
+  const s=pc.getSenders()[0];
+  if(!s)return;
+  const q=s.getParameters();
+  q.degradationPreference="maintain-framerate";
+  if(!q.encodings||!q.encodings.length)q.encodings=[{}];
+  q.encodings[0].maxFramerate=60;
+  q.encodings[0].maxBitrate=3500000;
+  await s.setParameters(q);
+ }catch(e){}
+}
+
+async function faceOffer(viewer){ if(!viewer||!faceStream||!faceCh)return;
  faceDropViewer(viewer,true);
  const pc=new RTCPeerConnection(ICE_CFG);
  faceViewers[viewer]=pc;
  facePending[viewer]=[];
  faceStream.getTracks().forEach(t=>{try{pc.addTrack(t,faceStream);}catch(e){}});
+ setTimeout(()=>tuneSender(pc),0);
  pc.onicecandidate=e=>{ if(e.candidate)faceSend("ice-p",{viewer,candidate:e.candidate}); };
  pc.onconnectionstatechange=()=>{
   if(["failed","closed","disconnected"].includes(pc.connectionState))faceDropViewer(viewer,true);
@@ -2349,11 +2378,13 @@ async function camTakeOffer(d){
  pc.ontrack=e=>{
   const v=$("camVideo");
   if(v&&e.streams&&e.streams[0]){
+   try{v.playoutDelayHint=0.15;}catch(err){}
    v.srcObject=e.streams[0];
    v.play().catch(()=>{});
    camStartWatch();
   }
  };
+ try{pc.getReceivers().forEach(r=>{try{r.jitterBufferTarget=120;}catch(err){}});}catch(e){}
  pc.onicecandidate=e=>{
   if(!e.candidate||!camCh)return;
   try{camCh.send({type:"broadcast",event:"ice-v",payload:{viewer:camViewerId,candidate:e.candidate}});}catch(err){}
@@ -2419,7 +2450,7 @@ function camStill(reason){
  $("camStampText").textContent=reason||"still frames";
  const act=$("camActive");
  if(act)act.textContent="camera still up";
- if(!camFrameTimer)camFrameTimer=setInterval(camPullFrame,1300);
+ if(!camFrameTimer)camFrameTimer=setInterval(camPullFrame,400);
  camPullFrame();
 }
 
