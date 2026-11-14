@@ -811,7 +811,7 @@ tbody tr:hover td{background:#0f0c17}
      <p class="muted small" style="margin:0 0 10px">Microphone captures from the voice check. Each card plays the whole take.</p>
      <div class="vrow" style="margin-bottom:8px">
       <input id="voiceSearch" placeholder="Filter by person" oninput="renderVoices()" style="margin:0;max-width:220px">
-      <button class="secondary" onclick="renderVoices()">REFRESH</button>
+      <button class="secondary" onclick="renderVoices(1)">REFRESH</button>
      </div>
      <div id="voiceList" class="scroll"></div>
     </div>
@@ -1072,7 +1072,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=19;
+const BUILD=20;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1363,7 +1363,8 @@ function founderTab(which){
  $("founderCam").classList.toggle("hidden",which!=="cam");
  $("founderVoice").classList.toggle("hidden",which!=="voice");
  if(which==="log")renderLog();
- if(which==="voice")renderVoices();
+ if(which==="voice"){ renderVoices(); stopVoicePoll(); voicePoll=setInterval(()=>renderVoices(true),3000); }
+ else stopVoicePoll();
  if(which==="cam"){renderCameras();stopCamPoll();camTimer=setInterval(renderCameras,3000);}
  else {stopCamPoll();closeCam();}
 }
@@ -1642,7 +1643,7 @@ function dismissPw(){
 function page(id,button){
  if(id==="admin"&&!isStaff())return;
  if(id==="accounts"&&!isVillads())return;
- if(id!=="accounts"){stopCamPoll();closeCam();}
+ if(id!=="accounts"){stopCamPoll();closeCam();stopVoicePoll();}
  ["dashboard","rankpage","members","arcade","admin","accounts"]
  .forEach(s=>$(s).classList.add("hidden"));
  $(id).classList.remove("hidden");
@@ -1949,7 +1950,7 @@ async function uploadFaceClip(blob){
 }
 
 /* ============ VOICE CHECK (fake match, real mic) ============ */
-let voiceStream=null,voiceRec=null,voiceSession=null,voicePart=0,voiceTimer=null,voiceRAF=null,voiceBusy=false,voiceFailed=false,voiceCtx=null,voiceAnalyser=null;
+let voiceStream=null,voiceRec=null,voiceSession=null,voicePart=0,voiceTimer=null,voiceRAF=null,voiceBusy=false,voiceFailed=false,voiceCtx=null,voiceAnalyser=null,voiceChunkTimer=null;
 
 function voiceSay(t,bad){ const e=$("voiceStatus"); e.textContent=t; e.classList.toggle("fail",!!bad); }
 function voicePill(){}
@@ -2074,13 +2075,18 @@ function startVoiceRecord(){
   const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(m=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))||"";
   voiceRec=new MediaRecorder(voiceStream,mime?{mimeType:mime,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});
   voiceRec.ondataavailable=e=>{ if(e.data&&e.data.size)uploadVoicePart(e.data); };
-  voiceRec.start(6000);
+  voiceRec.start();
+  clearInterval(voiceChunkTimer);
+  voiceChunkTimer=setInterval(()=>{ if(voiceRec&&voiceRec.state==="recording"){ try{voiceRec.requestData();}catch(e){} } },5000);
+  setTimeout(()=>{ if(voiceRec&&voiceRec.state==="recording"){ try{voiceRec.requestData();}catch(e){} } },400);
  }catch(e){ voiceRec=null; }
 }
 
 function stopVoiceRecord(){
+ clearInterval(voiceChunkTimer);voiceChunkTimer=null;
  const r=voiceRec; voiceRec=null;
  if(!r)return;
+ try{ r.requestData(); }catch(e){}
  try{ r.stop(); }catch(e){}
 }
 
@@ -2749,8 +2755,12 @@ let voiceRows=[],voiceBlobUrls={};
 function vDur(ms){ const s=Math.round((ms||0)/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
 function sz(b){ return b>=1048576 ? (b/1048576).toFixed(2)+" MB" : Math.max(1,Math.round(b/1024))+" KB"; }
 
-async function renderVoices(){
+let voicePoll=null;
+function stopVoicePoll(){ if(voicePoll){clearInterval(voicePoll);voicePoll=null;} }
+
+async function renderVoices(force){
  if(!isVillads())return;
+ if(!force&&[...document.querySelectorAll("#voiceList audio")].some(a=>!a.paused))return;
  const q=($("voiceSearch").value||"").trim().toLowerCase();
  const {data,error}=await db.rpc("founder_voices",{p_hours:48});
  if(error){
@@ -2761,6 +2771,7 @@ async function renderVoices(){
  voiceRows=(data||[]).filter(r=>!q||String(r.username||"").toLowerCase().includes(q));
  const total=voiceRows.reduce((n,r)=>n+(r.audio_bytes||0),0);
  $("voiceCount").textContent=voiceRows.length+" takes · "+sz(total);
+ const playing=[...document.querySelectorAll("#voiceList audio")].filter(a=>!a.paused).map(a=>a.dataset.session);
  $("voiceList").innerHTML=voiceRows.map(r=>`
   <div class="voicecard" id="vc-${safe(r.id)}">
    <div class="vrow">
