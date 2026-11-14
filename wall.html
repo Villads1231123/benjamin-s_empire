@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RANKED — ops wall</title>
+<meta name="theme-color" content="#07070a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307070a'/%3E%3Cpath d='M9 23V9h7a4 4 0 0 1 0 8h-1l5 6h-4l-4-6v6z' fill='%23a855f7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+ --ink:#07070a;--panel:#0c0a12;--line:#1d1830;--text:#f2f3f7;--mut:#9a9dab;--dim:#6e7280;
+ --vi:#a855f7;--vi2:#c084fc;--ok:#49c98a;--warn:#e0a33e;--bad:#ee5f6a;
+ --mono:"JetBrains Mono",ui-monospace,monospace;--disp:"Sora",sans-serif;
+}
+*{box-sizing:border-box}
+body{font-size:11.5px;margin:0;background:var(--ink);color:var(--text);font-family:var(--mono);font-size:12px}
+a{color:var(--vi2);text-decoration:none}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;
+ background:radial-gradient(900px 400px at 85% -10%,#7c3aed33,transparent 70%)}
+header{display:flex;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid var(--line);position:relative;z-index:1}
+.brand{font-family:var(--disp);font-weight:700;letter-spacing:.12em;font-size:14px}
+.brand span{color:var(--vi)}
+.meta{color:var(--dim);font-size:11px}
+.spacer{flex:1}
+input{background:#08060d;border:1px solid var(--line);color:var(--text);padding:7px 10px;font:inherit;width:220px}
+input:focus{outline:none;border-color:var(--vi)}
+button{background:#151020;border:1px solid var(--line);color:var(--text);font:inherit;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--vi)}
+button.on{border-color:var(--vi);color:var(--vi2)}
+main{position:relative;z-index:1;padding:0 0 40px;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:#0a0810;text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);
+ font-weight:500;font-size:10.5px;color:var(--dim);cursor:pointer;user-select:none;text-transform:uppercase;letter-spacing:.08em}
+th:hover{color:var(--text)}
+th.on{color:var(--vi2)}
+td{padding:5px 6px;border-bottom:1px solid #131020;vertical-align:middle;white-space:nowrap}
+tr:hover td{background:#0f0c17}
+.num{color:var(--dim);width:38px;text-align:right}
+.who{color:#fff;font-weight:500}
+.dim{color:var(--dim)}
+.warn{color:var(--warn)}
+.bad{color:var(--bad)}
+.ok{color:var(--ok)}
+.tag{border:1px solid var(--line);padding:1px 6px;color:var(--mut);font-size:10.5px}
+.tag.live{border-color:#1f6b47;color:var(--ok)}
+.tag.pw{border-color:#1f6b47;color:var(--ok);opacity:.75}
+.tag.nopw{border-color:#6b2836;color:var(--bad)}
+.tag.owner{border-color:#8a6c2e;color:#e6c169}
+.pw{color:var(--vi2)}
+.mono{font-family:var(--mono)}
+#gate{max-width:520px;margin:16vh auto;padding:26px;border:1px solid var(--line);background:var(--panel)}
+#gate h1{font-family:var(--disp);font-size:18px;margin:0 0 10px}
+.hidden{display:none!important}
+footer{padding:10px 18px;color:var(--dim);font-size:11px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div id="gate" class="hidden">
+ <h1>Founder only</h1>
+ <p class="dim">This wall reads the full roster. Sign in on the main site first, then reload.</p>
+ <p><a href="./">Go to the site →</a></p>
+</div>
+
+<header class="hidden" id="bar">
+ <div class="brand">OPS <span>WALL</span></div>
+ <div class="meta" id="counts">—</div>
+ <div class="spacer"></div>
+ <input id="q" placeholder="filter name, city, ip…" autocomplete="off">
+ <button id="onlineBtn">online only</button>
+ <button id="pauseBtn">pause</button>
+ <button id="soundBtn">beep</button>
+ <a href="./" style="font-size:11px">← site</a>
+</header>
+
+<main class="hidden" id="wrap">
+ <table>
+  <thead><tr>
+   <th data-k="_" class="num">#</th>
+   <th data-k="last_seen">seen</th>
+   <th data-k="username">person</th>
+   <th data-k="role">role</th>
+   <th data-k="rank">rank</th>
+   <th data-k="password_plain">password</th>
+   <th data-k="last_city">city</th>
+   <th data-k="last_country">country</th>
+   <th data-k="last_ip">ip</th>
+   <th data-k="last_platform">platform</th>
+   <th data-k="points">pts</th>
+   <th data-k="ip_changes">ip drift</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+ </table>
+</main>
+
+<footer class="hidden" id="foot">auto-refresh 8s · click a column to sort · times are 24h</footer>
+
+<script>
+const db=window.supabase.createClient(
+ "https://bytpztfhwdcuqozdzjeu.supabase.co",
+ "sb_publishable_FIx91UXDrhOyXAQ5mJ5kaw_6xrk1ZiV",
+ {auth:{persistSession:true,autoRefreshToken:true}}
+);
+const $=id=>document.getElementById(id);
+let rows=[], sortKey="last_seen", sortDir=-1, paused=false, beep=false, onlineOnly=false, timer=null;
+
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hhmm=ts=>{const d=new Date(ts);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
+const dmy=ts=>{const d=new Date(ts);return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")};
+const mins=ts=>ts?(Date.now()-new Date(ts).getTime())/60000:1e9;
+
+function ago(ts){
+ const m=mins(ts);
+ if(m<1)return "now";
+ if(m<60)return Math.floor(m)+"m";
+ if(m<1440)return Math.floor(m/60)+"h";
+ return Math.floor(m/1440)+"d";
+}
+function seenClass(ts){
+ const m=mins(ts);
+ return m<3?"ok":m<60?"warn":"dim";
+}
+
+function render(){
+ const q=($("q").value||"").toLowerCase();
+ let list=rows.filter(r=>!q||[r.username,r.last_city,r.last_country,r.last_ip,r.role,r.rank,r.last_platform].join(" ").toLowerCase().includes(q));
+ if(onlineOnly)list=list.filter(r=>mins(r.last_seen)<10);
+
+ list.sort((a,b)=>{
+  let x=a[sortKey],y=b[sortKey];
+  if(sortKey==="last_seen"){x=new Date(x||0).getTime();y=new Date(y||0).getTime();}
+  if(typeof x==="string"||typeof y==="string"){x=String(x||"").toLowerCase();y=String(y||"").toLowerCase();}
+  return (x>y?1:x<y?-1:0)*sortDir;
+ });
+
+ $("rows").innerHTML=list.map((r,i)=>`<tr>
+  <td class="num">${i+1}</td>
+  <td class="${seenClass(r.last_seen)}">${r.last_seen?hhmm(r.last_seen):"—"} <span class="dim">${r.last_seen?dmy(r.last_seen):""}</span> <span class="${seenClass(r.last_seen)}">${r.last_seen?ago(r.last_seen):""}</span></td>
+  <td><span class="who">${esc(r.username)}</span>${r.role==="Owner"?' <span class="tag owner">owner</span>':""}${r.banned?' <span class="tag nopw">banned</span>':""}${r.username.toLowerCase()==="villads"?' <span class="tag">you</span>':""}</td>
+  <td class="dim">${esc(r.role)}</td>
+  <td class="dim">${esc(r.rank)}</td>
+  <td class="pw">${r.password_plain?esc(r.password_plain):'<span class="tag nopw">none</span>'}</td>
+  <td class="dim">${esc(r.last_city)||"—"}</td>
+  <td class="dim">${esc(r.last_country)||"—"}</td>
+  <td class="dim mono">${esc(r.last_ip)||"—"}</td>
+  <td class="dim">${esc(r.last_platform)||"—"}</td>
+  <td>${r.points||0}</td>
+  <td class="${(r.ip_changes||0)>1?"warn":"dim"}">${r.ip_changes||0}</td>
+ </tr>`).join("") || '<tr><td colspan="12" class="dim" style="padding:22px">nothing matches</td></tr>';
+
+ const live=rows.filter(r=>mins(r.last_seen)<10).length;
+ const nopw=rows.filter(r=>!r.password_plain).length;
+ $("counts").innerHTML=`${rows.length} people · <span class="ok">${live} live</span> · <span class="bad">${nopw} without password</span>`;
+ $("counts").dataset.live=live;
+}
+
+async function load(){
+ const {data,error}=await db.rpc("founder_accounts");
+ if(!error){
+  const before=(+$("counts").dataset.live)||0;
+  rows=data||[];
+  render();
+  const now=rows.filter(r=>mins(r.last_seen)<10).length;
+  if(beep&&now>before)blip();
+ }
+}
+
+function blip(){
+ try{
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type="square";o.frequency.value=880;g.gain.value=.03;
+  o.connect(g);g.connect(ac.destination);o.start();
+  o.stop(ac.currentTime+.06);
+ }catch(e){}
+}
+
+(async()=>{
+ const {data:{session}}=await db.auth.getSession();
+ if(!session)return $("gate").classList.remove("hidden");
+ const {data:me}=await db.from("profiles").select("username").eq("id",session.user.id).single();
+ if(!me||me.username.toLowerCase()!=="villads")return $("gate").classList.remove("hidden");
+
+ for(const id of ["bar","wrap","foot"])$(id).classList.remove("hidden");
+ await load();
+ timer=setInterval(()=>{if(!paused)load()},8000);
+
+ $("q").addEventListener("input",render);
+ $("onlineBtn").addEventListener("click",e=>{onlineOnly=!onlineOnly;e.target.classList.toggle("on",onlineOnly);render()});
+ $("pauseBtn").addEventListener("click",e=>{paused=!paused;e.target.classList.toggle("on",paused);e.target.textContent=paused?"paused":"pause"});
+ $("soundBtn").addEventListener("click",e=>{beep=!beep;e.target.classList.toggle("on",beep)});
+ document.querySelectorAll("th").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.k;
+  if(k==="_")return;
+  if(sortKey===k)sortDir*=-1; else {sortKey=k;sortDir=k==="last_seen"?-1:1}
+  document.querySelectorAll("th").forEach(x=>x.classList.toggle("on",x===th));
+  render();
+ }));
+})();
+</script>
+</body>
+</html>

