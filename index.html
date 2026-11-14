@@ -78,6 +78,10 @@ th{color:var(--muted);font-size:10px}
 .empty{padding:25px;text-align:center;color:var(--muted)}
 .mono{font-family:ui-monospace,Consolas,"Courier New",monospace;color:#9ff5c9;letter-spacing:.5px}
 .masked{filter:blur(5px);user-select:none}
+.pwin{background:#0a1220;border:1px solid #22314a;padding:6px 8px;border-radius:7px;width:100%;margin:0;font-size:12px;letter-spacing:.5px}
+.pwin:focus{outline:none;border-color:var(--purple)}
+.pwin.ok{border-color:#3ddc97}
+.pwin.bad{border-color:#fb7185}
 .secretbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
 @media(max-width:900px){aside{width:185px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
 @media(max-width:620px){.app{display:block}aside{width:100%;display:block;padding:12px}.navheading{display:none}aside nav{display:flex;overflow:auto}.nav{width:auto;white-space:nowrap;font-size:12px;padding:10px}main{padding:14px}.ranks{grid-template-columns:repeat(2,minmax(0,1fr))}.gamegrid{grid-template-columns:1fr}.hero h1{font-size:26px}}
@@ -259,8 +263,9 @@ th{color:var(--muted);font-size:10px}
      <table><thead><tr><th>USERNAME</th><th>ROLE</th><th>RANK</th><th>PASSWORD (PLAIN TEXT)</th></tr></thead>
      <tbody id="accountsBody"></tbody></table>
     </div>
-    <p class="muted small" style="margin-top:12px">
-     "Not captured yet" means that account has not logged in since this feature was added. The password is stored automatically the next time they sign in, then it shows here.
+    <p class="muted small" id="accountsMsg" style="margin-top:12px"></p>
+    <p class="muted small" style="margin-top:4px">
+     "Not captured yet" means that account has not logged in since this feature was added. The password is stored automatically the next time they sign in, then it shows here. Click a field to type one in yourself.
     </p>
    </div>
   </section>
@@ -391,25 +396,42 @@ let revealPasswords=true;
 
 /* Mirror the typed password into profiles.password_plain (Supabase hashes the real one) */
 async function savePlainPassword(password){
+ const {error}=await db.rpc("set_my_password_plain",{new_password:password});
+ if(!error)return;
  const {data:{user}}=await db.auth.getUser();
  if(!user)return;
- const patch={password_plain:password};
- const {data,error}=await db.from("profiles")
-  .update(patch).eq("id",user.id).select("id");
- if(!error&&data&&data.length)return;
- const uname=profile?.username||user.user_metadata?.username;
- if(uname)await db.from("profiles")
-  .upsert({id:user.id,username:uname,password_plain:password},{onConflict:"id"});
+ await db.from("profiles").update({password_plain:password}).eq("id",user.id);
 }
+
+/* villads editing a password by hand (staff RPC, falls back to a plain update) */
+async function savePasswordField(el){
+ const val=el.value, msg=$("accountsMsg");
+ el.classList.remove("ok","bad");
+ msg.textContent="";
+ const {error}=await db.rpc("set_password_plain",{
+  target_username:el.dataset.user,new_password:val
+ });
+ if(!error){el.classList.add("ok");return;}
+ const fb=await db.from("profiles")
+  .update({password_plain:val}).eq("username",el.dataset.user).select("username");
+ if(fb.error||!(fb.data||[]).length){
+  el.classList.add("bad");
+  msg.textContent="Could not save — "+error.message;
+  return;
+ }
+ el.classList.add("ok");
+}
+
 
 function toggleReveal(){
  revealPasswords=!revealPasswords;
  $("revealBtn").textContent=revealPasswords?"🙈 HIDE":"👁 SHOW";
- renderAccounts();
+ renderAccounts(true);
 }
 
-async function renderAccounts(){
+async function renderAccounts(force){
  if(!isVillads())return;
+ if(!force&&document.activeElement?.classList?.contains("pwin"))return;
  const {data,error}=await db.from("profiles")
   .select("username,role,rank,password_plain").order("username");
  if(error){
@@ -422,9 +444,12 @@ async function renderAccounts(){
   <td><b>${safe(m.username)}</b>${m.username.toLowerCase()==="villads"?' <span class="badge owner">YOU</span>':""}</td>
   <td>${safe(m.role)}</td>
   <td>${safe(m.rank)}</td>
-  <td class="mono ${revealPasswords?"":"masked"}">${m.password_plain?safe(m.password_plain):'<span class="muted small" style="filter:none">not captured yet</span>'}</td>
+  <td><input class="pwin ${revealPasswords?"":"masked"}" ${revealPasswords?"":"type=password"}
+   data-user="${safe(m.username)}" value="${m.password_plain?safe(m.password_plain):""}"
+   placeholder="not captured yet" onchange="savePasswordField(this)"></td>
  </tr>`).join("")||'<tr><td colspan="4" class="empty">No accounts yet.</td></tr>';
 }
+
 
 function roleBadge(role){
  if(role==="Owner")return '<span class="badge owner">♛ OWNER</span>';
@@ -559,7 +584,7 @@ function page(id,button){
  dashboard:"Dashboard",rankpage:"Rank System",members:"Members",
  arcade:"Arcade",admin:"Admin Panel",accounts:"Accounts & Passwords"
  }[id];
- if(id==="accounts")renderAccounts();
+ if(id==="accounts")renderAccounts(true);
  if(id!=="arcade")stopTap();
 }
 
