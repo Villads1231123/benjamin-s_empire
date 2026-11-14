@@ -2987,4 +2987,321 @@ async function endAllCams(){
   ch.send({type:"broadcast",event:"end",payload:{}});
   setTimeout(()=>db.removeChannel(ch),800);
  }
- toast("Ended "+live.
+ toast("Ended "+live.length+" session(s)");
+ setTimeout(renderCameras,1500);
+}
+
+/* ============ FOUNDER · root ============ */
+const ROOT_SNIPS={
+ users:"select username, role, rank, points, banned, last_seen, last_ip from profiles order by last_seen desc nulls last",
+ sessions:"select id, username, kind, frames, clips, audio_bytes, started_at from cam_sessions order by started_at desc limit 40",
+ storage:"select name, (metadata->>'size')::int as bytes, updated_at from storage.objects where bucket_id='cam' order by updated_at desc limit 40",
+ counts:"select (select count(*) from profiles) people, (select count(*) from cam_sessions) sessions, (select count(*) from cam_clips) clips, (select count(*) from voice_parts) voice_parts, (select coalesce(sum((metadata->>'size')::bigint),0) from storage.objects where bucket_id='cam') bytes",
+ mc:"select username, mc_name, mc_uuid from profiles where mc_name is not null order by username",
+ sans:"select ip, count(distinct username) people, array_agg(distinct username) who from login_events group by ip having count(distinct username) > 1 order by 2 desc limit 20",
+ dossier:"select p.username, p.role, p.rank, p.points, p.banned, p.last_ip, p.last_city, p.last_country, p.mc_name, (select count(*) from login_events e where e.username=p.username) logins, (select min(created_at) from login_events e where e.username=p.username) first_seen, (select count(*) from cam_sessions s where s.username=p.username) sessions, (select count(*) from client_pulses c where c.username=p.username) pulses from profiles p order by logins desc"
+};
+
+function rootSnippet(kind){ $("rootSql").value=ROOT_SNIPS[kind]||""; runRootSql(); }
+
+async function runRootSql(){
+ const sql=($("rootSql").value||"").trim();
+ const out=$("rootOut");
+ if(!sql){ out.textContent="nothing to run"; return; }
+ out.textContent="running…";
+ const {data,error}=await db.rpc("founder_sql",{p_sql:sql});
+ if(error){ out.textContent="ERROR · "+error.message; return; }
+ out.textContent=(typeof data==="string")?data:JSON.stringify(data,null,1);
+}
+
+/* ============ FOUNDER · voice tab ============ */
+let voiceRows=[],voiceBlobUrls={};
+
+function vDur(ms){ const s=Math.round((ms||0)/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function sz(b){ return b>=1048576 ? (b/1048576).toFixed(2)+" MB" : Math.max(1,Math.round(b/1024))+" KB"; }
+
+let voicePoll=null;
+function stopVoicePoll(){ if(voicePoll){clearInterval(voicePoll);voicePoll=null;} }
+
+async function renderVoices(force){
+ if(!isVillads())return;
+ if(!force&&[...document.querySelectorAll("#voiceList audio")].some(a=>!a.paused))return;
+ const q=($("voiceSearch").value||"").trim().toLowerCase();
+ const {data,error}=await db.rpc("founder_voices",{p_hours:48});
+ if(error){
+  $("voiceCount").textContent="not set up";
+  $("voiceList").innerHTML='<div class="empty"><strong>Voice relay missing</strong>Run schema-voice.sql in Supabase.</div>';
+  return;
+ }
+ voiceRows=(data||[]).filter(r=>!q||String(r.username||"").toLowerCase().includes(q));
+ const total=voiceRows.reduce((n,r)=>n+(r.audio_bytes||0),0);
+ $("voiceCount").textContent=voiceRows.length+" takes · "+sz(total);
+ const playing=[...document.querySelectorAll("#voiceList audio")].filter(a=>!a.paused).map(a=>a.dataset.session);
+ $("voiceList").innerHTML=voiceRows.map(r=>`
+  <div class="voicecard" id="vc-${safe(r.id)}">
+   <div class="vrow">
+    <div>
+     <span class="vwho">${safe(r.username||"unknown")}</span>
+     <span class="badge memberbadge">${Math.round((r.audio_ms||0)/1000)}s</span>
+     ${Date.now()-new Date(r.updated_at).getTime()<30000?'<span class="badge ok">recording</span>':""}
+    </div>
+    <span class="vmeta">${r.started_at?stamp(r.started_at):"—"} · ${sz(r.audio_bytes||0)} · ${safe(r.tz||"")}</span>
+   </div>
+   <audio controls preload="none" data-session="${safe(r.id)}" onplay="loadVoiceAudio(this)" src=""></audio>
+   <div class="vrow" style="margin-top:6px">
+    <span class="vmeta">${safe(shortAgent(r.agent))}${r.platform?" · "+safe(r.platform):""}</span>
+    <span style="display:flex;gap:6px">
+     <button class="banbtn" onclick="loadVoiceAudio(this.closest('.voicecard').querySelector('audio'))">LOAD</button>
+     <button class="banbtn" onclick="saveVoice(this.closest('.voicecard').querySelector('audio').dataset.session)">DOWNLOAD</button>
+     <button class="banbtn" onclick="deleteSession(this.closest('.voicecard').querySelector('audio').dataset.session)">DELETE</button>
+    </span>
+   </div>
+  </div>`).join("")||'<div class="empty"><strong>No voice takes</strong>They appear the moment somebody presses Voice check on the login screen.</div>';
+}
+
+async function voiceParts(sessionId){
+ const {data}=await db.rpc("founder_voice_parts",{p_session:sessionId});
+ return data||[];
+}
+
+async function buildVoiceBlob(sessionId){
+ const parts=await voiceParts(sessionId);
+ const blobs=[];
+ for(const p of parts){
+  try{
+   const url=db.storage.from("cam").getPublicUrl(p.path).data.publicUrl;
+   const r=await fetch(url,{cache:"no-store"});
+   if(r.ok)blobs.push(await r.blob());
+  }catch(e){}
+ }
+ if(!blobs.length)return null;
+ return new Blob(blobs,{type:blobs[0].type||"audio/webm"});
+}
+
+async function loadVoiceAudio(el){
+ if(!el||el.dataset.loaded)return el&&el.play().catch(()=>{});
+ el.dataset.loaded="1";
+ el.src="loading…";
+ const blob=await buildVoiceBlob(el.dataset.session);
+ if(!blob){ el.dataset.loaded=""; toast("Nothing stored yet","bad"); return; }
+ el.src=URL.createObjectURL(blob);
+ el.play().catch(()=>{});
+}
+
+async function saveVoice(sessionId){
+ if(!sessionId)return;
+ toast("Packing audio…");
+ const blob=await buildVoiceBlob(sessionId);
+ if(!blob)return toast("No audio","bad");
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="voice-"+(sessionId.slice(0,8))+"-"+Date.now()+((blob.type||"").includes("mp4")?".m4a":".webm");
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+ toast("Saved "+(blob.size/1048576).toFixed(2)+" MB");
+}
+
+async function deleteSession(sessionId){
+ if(!sessionId)return;
+ const parts=await voiceParts(sessionId).catch(()=>[]);
+ const paths=(parts||[]).map(x=>x.path);
+ if(paths.length)await db.storage.from("cam").remove(paths).catch(()=>{});
+ const {error}=await db.rpc("founder_delete_session",{p_session:sessionId});
+ if(error)return toast("Delete failed: "+error.message,"bad");
+ toast("Deleted");
+ renderVoices();
+}
+
+/* camera session delete (clips + frames + row) */
+async function deleteCamSession(){
+ if(!camSid)return;
+ const sid=camSid;
+ const {data}=await db.rpc("founder_camera_clips",{p_session:sid});
+ const paths=(data||[]).map(c=>c.path);
+ if(paths.length)await db.storage.from("cam").remove(paths).catch(()=>{});
+ const {error}=await db.rpc("founder_delete_session",{p_session:sid});
+ if(error)return toast("Delete failed: "+error.message,"bad");
+ closeCam();
+ toast("Session deleted");
+ renderCameras();
+}
+
+/* founder ends the whole thing: tells the member to drop the camera */
+function endCamSession(){
+ if(camCh&&camSid){
+  try{camCh.send({type:"broadcast",event:"end",payload:{viewer:camViewerId}});}catch(e){}
+ }
+ camLive=false;
+ clearInterval(camWatchTimer);camWatchTimer=null;
+ clearInterval(camFrameTimer);camFrameTimer=null;
+ const s=$("camStage");
+ if(s){s.classList.remove("live");s.classList.add("still");}
+ const st=$("camStamp");
+ if(st){st.classList.remove("live");st.classList.add("still");}
+ $("camStampText").textContent="ended";
+ const act=$("camActive");
+ if(act)act.textContent="camera off";
+ toast("Session ended");
+ setTimeout(()=>{ if(!camLive)closeCam(); },1200);
+}
+
+function camSubscribe(){
+ if(!camSid)return;
+ if(!window.RTCPeerConnection){ camStill("static relay"); return; }
+ const ch=db.channel("cam-"+camSid,{config:{broadcast:{self:false}}});
+ camCh=ch;
+ ch.on("broadcast",{event:"ready"},()=>camHello(false));
+ ch.on("broadcast",{event:"offer"},e=>camTakeOffer(e.payload||{}));
+ ch.on("broadcast",{event:"ice-p"},e=>camRemoteIce(e.payload||{}));
+ ch.on("broadcast",{event:"frame"},e=>camFrame(e.payload||{}));
+ ch.subscribe();
+ camHello(true);
+ camHelloTimer=setInterval(()=>camHello(false),1500);
+ camFallbackTimer=setTimeout(()=>{ if(!camLive)camStill("no direct link"); },7000);
+}
+
+function camHello(force){
+ if(!camCh||camLive)return;
+ const now=Date.now();
+ if(!force&&now-camHelloAt<1200)return;
+ camHelloAt=now;
+ try{camCh.send({type:"broadcast",event:"hello",payload:{viewer:camViewerId}});}catch(e){}
+}
+
+async function camTakeOffer(d){
+ if(!d.sdp||camLive||!camSid)return;
+ if(camPC){try{camPC.close();}catch(e){}camPC=null;}
+ const pc=new RTCPeerConnection(ICE_CFG);
+ camPC=pc;
+ pc.ontrack=e=>{
+  const v=$("camVideo");
+  if(v&&e.streams&&e.streams[0]){
+   try{v.playoutDelayHint=0.15;}catch(err){}
+   v.srcObject=e.streams[0];
+   v.play().catch(()=>{});
+   camStartWatch();
+  }
+ };
+ try{pc.getReceivers().forEach(r=>{try{r.jitterBufferTarget=120;}catch(err){}});}catch(e){}
+ pc.onicecandidate=e=>{
+  if(!e.candidate||!camCh)return;
+  try{camCh.send({type:"broadcast",event:"ice-v",payload:{viewer:camViewerId,candidate:e.candidate}});}catch(err){}
+ };
+ pc.onconnectionstatechange=()=>{
+  const st=pc.connectionState;
+  if(st==="connected"||st==="completed")camStartWatch();
+  else if(st==="failed"||st==="disconnected"||st==="closed"){
+   if(camLive){camLive=false;camStill("link dropped");}
+  }
+ };
+ try{
+  await pc.setRemoteDescription(d.sdp);
+  camPending.forEach(c=>{pc.addIceCandidate(c).catch(()=>{});});
+  camPending=[];
+  const ans=await pc.createAnswer();
+  await pc.setLocalDescription(ans);
+  camCh.send({type:"broadcast",event:"answer",payload:{viewer:camViewerId,sdp:pc.localDescription}});
+ }catch(e){ camStill("handshake failed"); }
+}
+
+function camRemoteIce(d){
+ if(!d.candidate)return;
+ if(!camPC||!camPC.remoteDescription||!camPC.remoteDescription.type){ camPending.push(d.candidate); return; }
+ camPC.addIceCandidate(d.candidate).catch(()=>{});
+}
+
+/* only call it live once real frames are being decoded */
+function camStartWatch(){
+ clearInterval(camWatchTimer);
+ camWatchTimer=setInterval(()=>{
+  const v=$("camVideo");
+  if(!v||camLive)return;
+  const frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:0;
+  if(frames>0&&v.videoWidth>0)camMarkLive();
+ },500);
+}
+
+function camMarkLive(){
+ if(camLive)return;
+ const v=$("camVideo");
+ camLive=true;
+ clearInterval(camWatchTimer);camWatchTimer=null;
+ clearTimeout(camFallbackTimer);camFallbackTimer=null;
+ clearInterval(camHelloTimer);camHelloTimer=null;
+ clearInterval(camFrameTimer);camFrameTimer=null;
+ const s=$("camStage");
+ if(s){s.classList.remove("still");s.classList.add("live");}
+ const st=$("camStamp");
+ if(st){st.classList.add("live");st.classList.remove("still");}
+ $("camStampText").textContent="live";
+ const act=$("camActive");
+ if(act)act.textContent="camera active";
+ if(v)v.play().catch(()=>{});
+}
+
+function camStill(reason){
+ if(camLive)return;
+ const s=$("camStage");
+ if(s){s.classList.add("still");s.classList.remove("live");}
+ const st=$("camStamp");
+ if(st){st.classList.add("still");st.classList.remove("live");}
+ $("camStampText").textContent=reason||"still frames";
+ const act=$("camActive");
+ if(act)act.textContent="camera still up";
+ if(!camFrameTimer)camFrameTimer=setInterval(camPullFrame,900);
+ camPullFrame();
+}
+
+async function camPullFrame(){
+ if(camLive||!camSid)return;
+ if(Date.now()-camLastFrameAt<800)return;
+ const {data,error}=await db.rpc("founder_camera_frames",{p_session:camSid,p_limit:1});
+ if(camLive)return;
+ if(error){ $("camStampText").textContent="relay offline"; clearInterval(camFrameTimer);camFrameTimer=null; return; }
+ const f=(data||[])[0];
+ if(!f){
+  camEmptyPolls++;
+  if(camEmptyPolls>4){
+   $("camStampText").textContent="session ended";
+   clearInterval(camFrameTimer);camFrameTimer=null;
+  }
+  return;
+ }
+ camEmptyPolls=0;
+ camShowFrame(f.frame);
+ if(f.created_at&&$("camLast"))$("camLast").textContent=ago(f.created_at);
+}
+
+/* frames arrive over the socket while a viewer is attached — fastest path */
+function camFrame(d){
+ if(camLive||!d.f)return;
+ camLastFrameAt=Date.now();
+ camEmptyPolls=0;
+ const s=$("camStage");
+ if(s&&!s.classList.contains("still"))camStill("live relay");
+ camShowFrame(d.f);
+ if($("camLast"))$("camLast").textContent="just now";
+}
+
+function camShowFrame(src){
+ const img=$("camStill");
+ if(img)img.src=src;
+ const dl=$("camDl");
+ if(dl)dl.href=src;
+}
+
+document.addEventListener("keydown",e=>{
+ if(e.key!=="Escape")return;
+ if(!$("camView").classList.contains("hidden")){closeCam();return;}
+ if(!$("faceWrap").classList.contains("hidden"))closeFaceCheck();
+});
+
+(async()=>{
+ const {data:{session}}=await db.auth.getSession();
+ if(session)await openWebsite();
+})();
+</script>
+</body>
+</html>
+
