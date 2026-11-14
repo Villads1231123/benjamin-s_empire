@@ -1095,7 +1095,7 @@ function rankCard(rank,i){
  const holders=members.filter(m=>m.rank===rank);
  return `<div class="rank" onclick="selectRank('${safe(rank)}')">
  <div class="ranknum">RANK ${String(i+1).padStart(2,"0")}</div>
- <h3>${safe(rank.toUpperCase())}</h3>
+ <h3>${safe(rank)}</h3>
  <span class="badge memberbadge">${holders.length} MEMBER${holders.length===1?"":"S"}</span>
  <div class="rankmembers">
  ${holders.length?holders.map(m=>`
@@ -1188,7 +1188,7 @@ async function updateWebsite(){
  $("myRole").textContent=profile.role;
  $("memberCount").textContent=members.length;
  $("rankLevel").textContent=(index+1)+"/39";
- $("rankName").textContent=profile.rank.toUpperCase();
+ $("rankName").textContent=profile.rank;
  $("progressBar").style.width=((index+1)/39*100)+"%";
  $("progressText").textContent="Rank "+(index+1)+" of 39";
  $("sideName").textContent=profile.username;
