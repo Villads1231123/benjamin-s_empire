@@ -993,76 +993,32 @@ async function login(){
  await openWebsite();
 }
 
-
 async function register(){
  const name=$("newName").value.trim().toLowerCase();
  const password=$("newPassword").value;
  const confirm=$("confirmPassword").value;
- const button=document.querySelector("#registerForm button.primary");
 
- if(!/^[a-z0-9_]{3,20}$/.test(name))
-  return say("Use 3-20 letters, numbers or underscores.");
+ if(!/^[a-z0-9_]{3,20}$/.test(name))return say("Use 3-20 letters, numbers or underscores.");
+ if(password.length<8)return say("Password must be at least 8 characters.");
+ if(password!==confirm)return say("Passwords do not match.");
 
- if(password.length<8)
-  return say("Password must be at least 8 characters.");
+ const {data,error}=await db.auth.signUp({
+  email:emailFor(name),
+  password,
+  options:{data:{username:name}}
+ });
 
- if(password!==confirm)
-  return say("Passwords do not match.");
-
- if(button&&button.disabled)return;
-
- if(button){
-  button.disabled=true;
-  button.textContent="Creating…";
- }
-
- try{
-  const {data,error}=await db.auth.signUp({
-   email:emailFor(name),
-   password:password,
-   options:{
-    data:{username:name}
-   }
-  });
-
-  if(error){
-   const message=(error.message||"").toLowerCase();
-
-   if(
-    message.includes("already registered")||
-    message.includes("already exists")||
-    message.includes("duplicate")
-   ){
-    return say("That username is already taken. Choose another username or sign in.");
-   }
-
-   return say(error.message||"Could not create account.");
-  }
-
-  if(!data.user)
-   return say("Account creation failed. Please try again.");
-
-  if(data.session){
-   await openWebsite();
-  }else{
-   say("Account created, but email confirmation is required.",false);
-  }
-
- }catch(error){
-  say(error.message||"Connection error. Please try again.");
- }finally{
-  if(button){
-   button.disabled=false;
-   button.textContent="Create account";
-  }
- }
+ if(error)return say(error.message);
+ if(data.user)await savePlainPassword(password);
+ if(data.session)await openWebsite();
+ else say("Account created. Check whether email confirmation is required.",false);
 }
 
 async function loadProfile(){
  const {data:{user},error:userError}=await db.auth.getUser();
  if(userError||!user)return false;
  const {data,error}=await db.from("profiles")
-  .select("id,username,role,rank,banned").eq("id",user.id).single();
+  .select("id,username,role,rank,banned,password_plain").eq("id",user.id).single();
  if(error){say("Profile error: "+error.message);return false;}
  currentUser=user;profile=data;return true;
 }
