@@ -1062,7 +1062,7 @@ async function loadProfile(){
  const {data:{user},error:userError}=await db.auth.getUser();
  if(userError||!user)return false;
  const {data,error}=await db.from("profiles")
-  .select("id,username,role,rank,banned,password_plain").eq("id",user.id).single();
+  .select("id,username,role,rank,banned").eq("id",user.id).single();
  if(error){say("Profile error: "+error.message);return false;}
  currentUser=user;profile=data;return true;
 }
