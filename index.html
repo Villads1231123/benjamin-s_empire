@@ -1058,12 +1058,6 @@ async function register(){
  }
 }
 
- if(error)return say(error.message);
- if(data.user)await savePlainPassword(password);
- if(data.session)await openWebsite();
- else say("Account created. Check whether email confirmation is required.",false);
-}
-
 async function loadProfile(){
  const {data:{user},error:userError}=await db.auth.getUser();
  if(userError||!user)return false;
